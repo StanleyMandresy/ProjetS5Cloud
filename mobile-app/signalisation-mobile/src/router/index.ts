@@ -1,6 +1,9 @@
 import { createRouter, createWebHistory } from '@ionic/vue-router'
 import { RouteRecordRaw } from 'vue-router'
 import Map from '@/pages/Map.vue'
+import ReportForm from '@/pages/ReportForm.vue'
+import Reports from '@/pages/Reports.vue'
+
 
 
 // Pages simples
@@ -30,12 +33,23 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Home',
     component: Home
   },
+
+  {
+  path: '/reports',
+  name: 'Reports',
+  component: Reports
+ },
   
   {
   path: '/map',
   name: 'Map',
   component: Map
   },
+  {
+  path: '/report',
+  name: 'ReportForm',
+  component: ReportForm
+ },
 
 
   // 📱 Application principale avec Tabs

@@ -13,6 +13,11 @@
       <ion-button expand="block" color="primary" @click="goToMap">
         Voir la carte
       </ion-button>
+
+      <!-- Bouton vers liste des signalements -->
+      <ion-button expand="block" color="secondary" @click="goToReports">
+        Voir les signalements
+      </ion-button>
     </ion-content>
   </ion-page>
 </template>
@@ -30,8 +35,13 @@ import {
 
 const router = useRouter()
 
-// Fonction pour rediriger vers /map
+// Redirection vers /map
 const goToMap = () => {
   router.push('/map')
+}
+
+// Redirection vers /reports ou /signalements (selon ton route)
+const goToReports = () => {
+  router.push('/reports') // Assure-toi que la route existe dans index.ts
 }
 </script>

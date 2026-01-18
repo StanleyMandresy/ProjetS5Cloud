@@ -7,13 +7,32 @@
     </ion-header>
 
     <ion-content fullscreen>
+
+      <!-- Pull to refresh -->
+      <ion-refresher slot="fixed" @ionRefresh="doRefresh">
+        <ion-refresher-content
+          pulling-text="Tirer pour rafraîchir"
+          refreshing-spinner="circles"
+        />
+      </ion-refresher>
+
+      <!-- Carte -->
       <div id="map"></div>
 
+      <!-- Bouton Me localiser -->
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button @click="locateMe">
           📍
         </ion-fab-button>
       </ion-fab>
+
+      <!-- Bouton Rafraîchir -->
+      <ion-fab vertical="bottom" horizontal="start" slot="fixed">
+        <ion-fab-button @click="refreshReports">
+          🔄
+        </ion-fab-button>
+      </ion-fab>
+
     </ion-content>
   </ion-page>
 </template>
@@ -27,34 +46,133 @@ import {
   IonContent,
   IonFab,
   IonFabButton,
+  IonRefresher,
+  IonRefresherContent,
   onIonViewDidEnter
 } from '@ionic/vue'
+import { onBeforeUnmount } from 'vue'
 
 import * as L from 'leaflet'
+import { useRouter } from 'vue-router'
+import { reportService, type Report } from '@/services/report.service'
 
+const router = useRouter()
+
+// Carte & marqueurs
 let map: L.Map | null = null
 let userMarker: L.Marker | null = null
+let tempMarker: L.Marker | null = null
+let reportMarkers: L.Layer[] = []
+let unsubscribe: (() => void) | null = null
 
-onIonViewDidEnter(() => {
-  if (!map) {
-    initMap()
-  } else {
-    map.invalidateSize() // 🔥 rend la carte fluide
-  }
-})
-
+// 📍 Initialisation carte
 const initMap = () => {
-  map = L.map('map', {
-    zoomControl: true,
-    attributionControl: true
-  }).setView([-18.8792, 47.5079], 13)
+  map = L.map('map').setView([-18.8792, 47.5079], 13)
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '© OpenStreetMap'
   }).addTo(map)
+
+  // 📍 Clic sur la carte = créer un signalement
+  map.on('click', (e: L.LeafletMouseEvent) => {
+    const { lat, lng } = e.latlng
+
+    if (tempMarker) {
+      map!.removeLayer(tempMarker)
+    }
+
+    tempMarker = L.marker([lat, lng])
+      .addTo(map!)
+      .bindPopup('Position sélectionnée')
+      .openPopup()
+
+    router.push({
+      name: 'ReportForm',
+      query: {
+        lat: lat.toString(),
+        lng: lng.toString()
+      }
+    })
+  })
 }
 
+// 🎨 Couleur par statut
+const getColorByStatus = (status: string) => {
+  switch (status) {
+    case 'NOUVEAU':
+      return 'red'
+    case 'EN_COURS':
+      return 'orange'
+    case 'RESOLU':
+      return 'green'
+    default:
+      return 'blue'
+  }
+}
+
+// 🔄 Charger les signalements sur la carte
+const loadReportsOnMap = async () => {
+  if (!map) return
+
+  const reports = await reportService.getAllReports()
+  displayReports(reports)
+}
+
+// 🎯 Afficher les signalements sur la carte
+const displayReports = (reports: Report[]) => {
+  if (!map) return
+
+  // Nettoyage anciens marqueurs
+  reportMarkers.forEach(marker => map!.removeLayer(marker))
+  reportMarkers = []
+
+  // Ajout nouveaux marqueurs
+  reports.forEach(report => {
+    const color = getColorByStatus(report.status)
+
+    const marker = L.circleMarker(
+      [report.latitude, report.longitude],
+      {
+        radius: 8,
+        color,
+        fillColor: color,
+        fillOpacity: 0.8
+      }
+    )
+      .addTo(map!)
+      .bindPopup(`
+        <b>${report.description || 'Sans description'}</b><br/>
+        📌 Statut : ${report.status}
+      `)
+
+    reportMarkers.push(marker)
+  })
+}
+
+// 🔴 Écoute en temps réel des signalements Firebase
+const startRealtimeSync = () => {
+  if (unsubscribe) {
+    unsubscribe()
+  }
+
+  unsubscribe = reportService.listenToReports((reports) => {
+    displayReports(reports)
+  })
+}
+
+// 🔄 Bouton rafraîchir
+const refreshReports = async () => {
+  await loadReportsOnMap()
+}
+
+// 🔽 Pull to refresh
+const doRefresh = async (event: CustomEvent) => {
+  await loadReportsOnMap()
+  event.detail.complete()
+}
+
+// 📍 Localisation utilisateur
 const locateMe = () => {
   if (!map) return
 
@@ -62,10 +180,11 @@ const locateMe = () => {
 
   map.once('locationfound', (e: L.LocationEvent) => {
     if (userMarker) {
-      map.removeLayer(userMarker)
+      map!.removeLayer(userMarker)
     }
 
-    userMarker = L.marker(e.latlng).addTo(map)
+    userMarker = L.marker(e.latlng)
+      .addTo(map!)
       .bindPopup('Vous êtes ici')
       .openPopup()
   })
@@ -74,6 +193,31 @@ const locateMe = () => {
     alert('Impossible de récupérer la position GPS')
   })
 }
+
+// 🚀 Cycle de vie Ionic
+onIonViewDidEnter(async () => {
+  if (!map) {
+    initMap()
+  } else {
+    map.invalidateSize()
+  }
+
+  // Démarrer la synchronisation en temps réel
+  startRealtimeSync()
+})
+
+// 🧹 Nettoyage à la destruction du composant
+onBeforeUnmount(() => {
+  if (unsubscribe) {
+    unsubscribe()
+  }
+})
+
+// 🌐 Bonus : retour réseau
+window.addEventListener('online', () => {
+  // Redémarrer la synchronisation en cas de retour réseau
+  startRealtimeSync()
+})
 </script>
 
 <style scoped>
