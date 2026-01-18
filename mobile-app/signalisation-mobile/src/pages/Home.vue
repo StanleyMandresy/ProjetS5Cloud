@@ -9,9 +9,9 @@
     <ion-content class="ion-padding">
       <h2>Bienvenue 🎉</h2>
 
-      <!-- Bouton Déconnexion -->
-      <ion-button expand="block" color="danger" @click="logout">
-        Déconnexion
+      <!-- Bouton vers Map -->
+      <ion-button expand="block" color="primary" @click="goToMap">
+        Voir la carte
       </ion-button>
     </ion-content>
   </ion-page>
@@ -28,13 +28,10 @@ import {
   IonButton
 } from '@ionic/vue'
 
-// Permet la navigation vers Login
 const router = useRouter()
 
-const logout = () => {
-  // Ici tu peux aussi supprimer le token / session si tu utilises Firebase
-  // localStorage.removeItem('userToken') par exemple
-
-  router.replace('/login') // redirection vers Login
+// Fonction pour rediriger vers /map
+const goToMap = () => {
+  router.push('/map')
 }
 </script>

@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory } from '@ionic/vue-router'
 import { RouteRecordRaw } from 'vue-router'
+import Map from '@/pages/Map.vue'
+
 
 // Pages simples
 import Login from '@/pages/Login.vue'
@@ -28,6 +30,13 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Home',
     component: Home
   },
+  
+  {
+  path: '/map',
+  name: 'Map',
+  component: Map
+  },
+
 
   // 📱 Application principale avec Tabs
   {
