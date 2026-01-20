@@ -25,9 +25,11 @@ import com.example.route.service.JwtService;
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
+    private final JwtService jwtService;
 
-    public SecurityConfig(CustomUserDetailsService userDetailsService) {
+    public SecurityConfig(CustomUserDetailsService userDetailsService, JwtService jwtService) {
         this.userDetailsService = userDetailsService;
+        this.jwtService = jwtService;
     }
 
     /* =========================
@@ -50,7 +52,11 @@ public class SecurityConfig {
                     mvc.pattern("/home"),
                     mvc.pattern("/css/**"),
                     mvc.pattern("/js/**"),
-                    mvc.pattern("/images/**")
+                    mvc.pattern("/images/**"),
+                    // Swagger UI
+                    mvc.pattern("/swagger-ui/**"),
+                    mvc.pattern("/v3/api-docs/**"),
+                    mvc.pattern("/swagger-ui.html")
                 )
             )
             .csrf(AbstractHttpConfigurer::disable)
@@ -88,8 +94,30 @@ public class SecurityConfig {
             )
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(
-                new JwtAuthenticationFilter(new JwtService(), userDetailsService),
+                new JwtAuthenticationFilter(jwtService, userDetailsService),
                 UsernamePasswordAuthenticationFilter.class
+            );
+
+        return http.build();
+    }
+    
+    /* =========================
+       CHAIN 3 : Swagger/OpenAPI (Public)
+       ========================= */
+    @Bean
+    @Order(3)
+    public SecurityFilterChain swaggerSecurity(HttpSecurity http) throws Exception {
+        http
+            .securityMatcher(
+                new org.springframework.security.web.util.matcher.OrRequestMatcher(
+                    new AntPathRequestMatcher("/v3/api-docs/**"),
+                    new AntPathRequestMatcher("/swagger-ui/**"),
+                    new AntPathRequestMatcher("/swagger-ui.html")
+                )
+            )
+            .csrf(AbstractHttpConfigurer::disable)
+            .authorizeHttpRequests(auth -> auth
+                .anyRequest().permitAll()
             );
 
         return http.build();

@@ -5,7 +5,7 @@ services:
     build: ./docker/postgres
     container_name: postgres_postgis
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -17,9 +17,11 @@ services:
     depends_on:
       - postgres
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/projet-cloud-db
-      SPRING_DATASOURCE_USERNAME: admin
-      SPRING_DATASOURCE_PASSWORD: admin
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: projet-cloud-db
+      DB_USER: admin
+      DB_PASSWORD: admin
 
   frontend:
     build: ./frontend

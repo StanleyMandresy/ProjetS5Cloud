@@ -98,5 +98,60 @@ public class AuthService {
         return response;
     }
     
-   
+    @Transactional
+    public Map<String, Object> updateUser(Long userId, String username, String email, String currentPassword, String newPassword) {
+        // Rechercher l'utilisateur
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+        
+        // Si le mot de passe doit être changé, vérifier l'ancien mot de passe
+        if (newPassword != null && !newPassword.isEmpty()) {
+            if (currentPassword == null || currentPassword.isEmpty()) {
+                throw new RuntimeException("Le mot de passe actuel est requis pour changer le mot de passe");
+            }
+            
+            if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+                throw new RuntimeException("Le mot de passe actuel est incorrect");
+            }
+            
+            user.setPasswordHash(passwordEncoder.encode(newPassword));
+        }
+        
+        // Mettre à jour le nom d'utilisateur si fourni
+        if (username != null && !username.isEmpty() && !username.equals(user.getUsername())) {
+            if (userRepository.existsByUsername(username)) {
+                throw new RuntimeException("Ce nom d'utilisateur est déjà utilisé");
+            }
+            user.setUsername(username);
+        }
+        
+        // Mettre à jour l'email si fourni
+        if (email != null && !email.isEmpty() && !email.equals(user.getEmail())) {
+            if (userRepository.existsByEmail(email)) {
+                throw new RuntimeException("Cet email est déjà utilisé");
+            }
+            user.setEmail(email);
+        }
+        
+        // Sauvegarder les modifications
+        User updatedUser = userRepository.save(user);
+        
+        // Générer un nouveau token avec les nouvelles informations
+        String token = jwtService.generateToken(updatedUser);
+        
+        // Préparer la réponse
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Profil mis à jour avec succès");
+        response.put("userId", updatedUser.getId());
+        response.put("username", updatedUser.getUsername());
+        response.put("email", updatedUser.getEmail());
+        response.put("token", token);
+        
+        return response;
+    }
+    
+    public User getUserById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+    }
 }
