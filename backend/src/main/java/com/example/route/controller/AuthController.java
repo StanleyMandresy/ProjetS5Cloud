@@ -57,7 +57,7 @@ public class AuthController {
             // Créer la réponse
             AuthResponse authResponse = new AuthResponse(
                 (String) response.get("message"),
-                ((Integer) response.get("userId")).longValue(),
+                (Long) response.get("userId"),
                 (String) response.get("username"),
                 (String) response.get("email"),
                 (String) response.get("token")
@@ -93,7 +93,7 @@ public class AuthController {
             // Créer la réponse
             AuthResponse authResponse = new AuthResponse(
                 (String) response.get("message"),
-                ((Integer) response.get("userId")).longValue(),
+                (Long) response.get("userId"),
                 (String) response.get("username"),
                 (String) response.get("email"),
                 (String) response.get("token")
@@ -135,7 +135,7 @@ public class AuthController {
             // Créer la réponse
             AuthResponse authResponse = new AuthResponse(
                 (String) response.get("message"),
-                ((Integer) response.get("userId")).longValue(),
+                (Long) response.get("userId"),
                 (String) response.get("username"),
                 (String) response.get("email"),
                 (String) response.get("token")
