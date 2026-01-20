@@ -25,9 +25,11 @@ import com.example.route.service.JwtService;
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
+    private final JwtService jwtService;
 
-    public SecurityConfig(CustomUserDetailsService userDetailsService) {
+    public SecurityConfig(CustomUserDetailsService userDetailsService, JwtService jwtService) {
         this.userDetailsService = userDetailsService;
+        this.jwtService = jwtService;
     }
 
     /* =========================
@@ -88,7 +90,7 @@ public class SecurityConfig {
             )
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(
-                new JwtAuthenticationFilter(new JwtService(), userDetailsService),
+                new JwtAuthenticationFilter(jwtService, userDetailsService),
                 UsernamePasswordAuthenticationFilter.class
             );
 
