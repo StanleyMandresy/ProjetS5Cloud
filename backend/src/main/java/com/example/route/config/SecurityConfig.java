@@ -15,6 +15,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
 import com.example.route.service.CustomUserDetailsService;
@@ -26,10 +27,12 @@ public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
     private final JwtService jwtService;
+    private final CorsConfigurationSource corsConfigurationSource;
 
-    public SecurityConfig(CustomUserDetailsService userDetailsService, JwtService jwtService) {
+    public SecurityConfig(CustomUserDetailsService userDetailsService, JwtService jwtService, CorsConfigurationSource corsConfigurationSource) {
         this.userDetailsService = userDetailsService;
         this.jwtService = jwtService;
+        this.corsConfigurationSource = corsConfigurationSource;
     }
 
     /* =========================
@@ -86,6 +89,7 @@ public class SecurityConfig {
 
         http
             .securityMatcher(new AntPathRequestMatcher("/api/**"))
+            .cors(cors -> cors.configurationSource(corsConfigurationSource))
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
