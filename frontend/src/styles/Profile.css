@@ -29,7 +29,7 @@
 }
 
 .profile-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #caf0f8 0%, #48cae4 100%);
   padding: 40px;
   color: white;
   display: flex;
@@ -61,7 +61,7 @@
 
 .edit-toggle-btn:hover {
   background: white;
-  color: #667eea;
+  color: #48cae4;
 }
 
 .cancel-btn {
@@ -127,7 +127,7 @@
   background: #f9fafb;
   padding: 24px;
   border-radius: 8px;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid #48cae4;
 }
 
 .form-section h3 {
@@ -165,8 +165,8 @@
 }
 
 .form-group input:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #48cae4;
+  box-shadow: 0 0 0 3px rgba(72, 202, 228, 0.1);
 }
 
 .form-group input:disabled {
@@ -218,7 +218,7 @@
 }
 
 .save-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #90e0ef 0%, #48cae4 100%);
   color: white;
   border: none;
   padding: 12px 32px;
@@ -231,7 +231,7 @@
 
 .save-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 12px rgba(72, 202, 228, 0.4);
 }
 
 .save-btn:active {

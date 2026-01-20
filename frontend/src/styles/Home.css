@@ -24,7 +24,7 @@
 .navbar-brand {
   font-size: 24px;
   font-weight: 700;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #90e0ef 0%, #48cae4 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -47,11 +47,11 @@
 
 .nav-link:hover {
   background: #f0f0f0;
-  color: #667eea;
+  color: #48cae4;
 }
 
 .logout-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #90e0ef 0%, #48cae4 100%);
   color: white;
   border: none;
   padding: 8px 20px;
@@ -63,7 +63,7 @@
 
 .logout-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 12px rgba(72, 202, 228, 0.4);
 }
 
 .home-content {
@@ -116,7 +116,7 @@
   padding: 24px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
-  border-top: 4px solid #667eea;
+  border-top: 4px solid #48cae4;
 }
 
 .info-card:hover {

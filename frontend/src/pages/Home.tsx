@@ -12,13 +12,13 @@ const Home: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-[#48cae4]/20 to-slate-900">
       {/* Navbar */}
       <nav className="bg-white/10 backdrop-blur-lg border-b border-white/20 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
-              <div className="bg-gradient-to-r from-purple-500 to-pink-500 w-10 h-10 rounded-lg flex items-center justify-center">
+              <div className="bg-gradient-to-r from-[#90e0ef] to-[#48cae4] w-10 h-10 rounded-lg flex items-center justify-center">
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
@@ -52,9 +52,9 @@ const Home: React.FC = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Welcome Card */}
-        <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 backdrop-blur-lg rounded-3xl p-8 mb-8 border border-white/20 shadow-2xl">
+        <div className="bg-gradient-to-r from-[#90e0ef]/20 to-[#48cae4]/20 backdrop-blur-lg rounded-3xl p-8 mb-8 border border-white/20 shadow-2xl">
           <div className="flex items-center space-x-4 mb-4">
-            <div className="bg-gradient-to-r from-purple-500 to-pink-500 w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg animate-float">
+            <div className="bg-gradient-to-r from-[#90e0ef] to-[#48cae4] w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg animate-float">
               <span className="text-3xl">👋</span>
             </div>
             <div>
@@ -145,7 +145,7 @@ const Home: React.FC = () => {
         <div className="flex justify-center">
           <button
             onClick={() => navigate('/profile')}
-            className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-2xl hover:from-purple-700 hover:to-pink-700 focus:ring-4 focus:ring-purple-300 transform transition-all duration-200 hover:scale-105 shadow-2xl hover:shadow-purple-500/50 flex items-center space-x-3"
+            className="px-8 py-4 bg-gradient-to-r from-[#90e0ef] to-[#48cae4] text-white font-bold rounded-2xl hover:from-[#ade8f4] hover:to-[#48cae4] focus:ring-4 focus:ring-[#48cae4]/30 transform transition-all duration-200 hover:scale-105 shadow-2xl hover:shadow-[#48cae4]/50 flex items-center space-x-3"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />

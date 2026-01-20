@@ -40,19 +40,19 @@ const Register: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 via-purple-500 to-pink-500 animate-gradient bg-[length:400%_400%] p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#caf0f8] via-[#90e0ef] to-[#48cae4] animate-gradient bg-[length:400%_400%] p-4">
       {/* Animated background shapes */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float"></div>
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float animation-delay-2000"></div>
-        <div className="absolute top-1/3 left-1/3 w-96 h-96 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float animation-delay-4000"></div>
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-[#ade8f4] rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float"></div>
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-[#90e0ef] rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float animation-delay-2000"></div>
+        <div className="absolute top-1/3 left-1/3 w-96 h-96 bg-[#48cae4] rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float animation-delay-4000"></div>
       </div>
 
       <div className="relative w-full max-w-md">
         <div className="bg-white/95 backdrop-blur-lg rounded-3xl shadow-2xl p-8 md:p-10 transform transition-all duration-300 hover:scale-[1.02]">
           {/* Logo/Icon */}
           <div className="flex justify-center mb-6">
-            <div className="bg-gradient-to-br from-blue-600 to-purple-600 w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg transform -rotate-3 hover:rotate-0 transition-transform duration-300">
+            <div className="bg-gradient-to-br from-[#90e0ef] to-[#48cae4] w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg transform -rotate-3 hover:rotate-0 transition-transform duration-300">
               <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
               </svg>
@@ -61,7 +61,7 @@ const Register: React.FC = () => {
 
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-[#90e0ef] to-[#48cae4] bg-clip-text text-transparent mb-2">
               Créer un compte
             </h1>
             <p className="text-gray-600">Rejoignez-nous dès maintenant</p>
@@ -100,7 +100,7 @@ const Register: React.FC = () => {
                   minLength={3}
                   placeholder="Choisissez un nom d'utilisateur"
                   disabled={loading}
-                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-200 transition-all duration-200 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#48cae4] focus:ring-4 focus:ring-[#90e0ef]/30 transition-all duration-200 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
@@ -123,7 +123,7 @@ const Register: React.FC = () => {
                   required
                   placeholder="votre@email.com"
                   disabled={loading}
-                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-200 transition-all duration-200 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#48cae4] focus:ring-4 focus:ring-[#90e0ef]/30 transition-all duration-200 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
@@ -147,7 +147,7 @@ const Register: React.FC = () => {
                   minLength={6}
                   placeholder="Au moins 6 caractères"
                   disabled={loading}
-                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-200 transition-all duration-200 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#48cae4] focus:ring-4 focus:ring-[#90e0ef]/30 transition-all duration-200 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
@@ -170,7 +170,7 @@ const Register: React.FC = () => {
                   required
                   placeholder="Confirmez votre mot de passe"
                   disabled={loading}
-                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-200 transition-all duration-200 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#48cae4] focus:ring-4 focus:ring-[#90e0ef]/30 transition-all duration-200 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
@@ -178,7 +178,7 @@ const Register: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold py-3 px-4 rounded-xl hover:from-blue-700 hover:to-purple-700 focus:ring-4 focus:ring-blue-300 transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg hover:shadow-xl"
+              className="w-full bg-gradient-to-r from-[#90e0ef] to-[#48cae4] text-white font-bold py-3 px-4 rounded-xl hover:from-[#ade8f4] hover:to-[#48cae4] focus:ring-4 focus:ring-[#48cae4]/30 transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg hover:shadow-xl"
             >
               {loading ? (
                 <span className="flex items-center justify-center">
@@ -200,7 +200,7 @@ const Register: React.FC = () => {
               Déjà un compte ?{' '}
               <Link
                 to="/login"
-                className="font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:from-blue-700 hover:to-purple-700 transition-all duration-200"
+                className="font-semibold bg-gradient-to-r from-[#90e0ef] to-[#48cae4] bg-clip-text text-transparent hover:from-[#ade8f4] hover:to-[#48cae4] transition-all duration-200"
               >
                 Se connecter
               </Link>

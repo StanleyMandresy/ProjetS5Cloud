@@ -27,19 +27,19 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-pink-500 to-red-500 animate-gradient bg-[length:400%_400%] p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#caf0f8] via-[#90e0ef] to-[#48cae4] animate-gradient bg-[length:400%_400%] p-4">
       {/* Animated background shapes */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float animation-delay-2000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-red-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float animation-delay-4000"></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-[#ade8f4] rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-[#90e0ef] rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float animation-delay-2000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-[#48cae4] rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float animation-delay-4000"></div>
       </div>
 
       <div className="relative w-full max-w-md">
         <div className="bg-white/95 backdrop-blur-lg rounded-3xl shadow-2xl p-8 md:p-10 transform transition-all duration-300 hover:scale-[1.02]">
           {/* Logo/Icon */}
           <div className="flex justify-center mb-6">
-            <div className="bg-gradient-to-br from-purple-600 to-pink-600 w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg transform rotate-3 hover:rotate-0 transition-transform duration-300">
+            <div className="bg-gradient-to-br from-[#90e0ef] to-[#48cae4] w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg transform rotate-3 hover:rotate-0 transition-transform duration-300">
               <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
@@ -48,7 +48,7 @@ const Login: React.FC = () => {
 
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-[#90e0ef] to-[#48cae4] bg-clip-text text-transparent mb-2">
               Bienvenue !
             </h1>
             <p className="text-gray-600">Connectez-vous pour continuer</p>
@@ -86,7 +86,7 @@ const Login: React.FC = () => {
                   required
                   placeholder="Entrez votre nom d'utilisateur"
                   disabled={loading}
-                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-200 transition-all duration-200 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#48cae4] focus:ring-4 focus:ring-[#90e0ef]/30 transition-all duration-200 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
@@ -109,7 +109,7 @@ const Login: React.FC = () => {
                   required
                   placeholder="Entrez votre mot de passe"
                   disabled={loading}
-                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-200 transition-all duration-200 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#48cae4] focus:ring-4 focus:ring-[#90e0ef]/30 transition-all duration-200 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
@@ -117,7 +117,7 @@ const Login: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold py-3 px-4 rounded-xl hover:from-purple-700 hover:to-pink-700 focus:ring-4 focus:ring-purple-300 transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg hover:shadow-xl"
+              className="w-full bg-gradient-to-r from-[#90e0ef] to-[#48cae4] text-white font-bold py-3 px-4 rounded-xl hover:from-[#ade8f4] hover:to-[#48cae4] focus:ring-4 focus:ring-[#48cae4]/30 transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg hover:shadow-xl"
             >
               {loading ? (
                 <span className="flex items-center justify-center">
@@ -139,7 +139,7 @@ const Login: React.FC = () => {
               Pas encore de compte ?{' '}
               <Link
                 to="/register"
-                className="font-semibold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent hover:from-purple-700 hover:to-pink-700 transition-all duration-200"
+                className="font-semibold bg-gradient-to-r from-[#90e0ef] to-[#48cae4] bg-clip-text text-transparent hover:from-[#ade8f4] hover:to-[#48cae4] transition-all duration-200"
               >
                 Créer un compte
               </Link>
