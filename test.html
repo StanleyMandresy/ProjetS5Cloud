@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Carte Antananarivo</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <style>
+    #map { height: 600px; width: 100%; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    // Centrer la carte sur Antananarivo
+    var map = L.map('map').setView([-18.8792, 47.5079], 13);
+
+    // Ajouter les tuiles raster depuis Tileserver
+    L.tileLayer('http://localhost:8000/styles/osm-bright/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap',
+      maxZoom: 20
+    }).addTo(map);
+
+    // Exemple : ajouter un marqueur
+    L.marker([-18.8792, 47.5079]).addTo(map)
+      .bindPopup('Centre d’Antananarivo')
+      .openPopup();
+  </script>
+</body>
+</html>
