@@ -15,7 +15,7 @@
     <groupId>com.example</groupId>
     <artifactId>vente-app</artifactId>
     <version>1.0.0</version>
-    <name>vente-app</name>
+    <name>Carte</name>
     <description>Application de vente avec Spring Boot</description>
     
     <properties>
