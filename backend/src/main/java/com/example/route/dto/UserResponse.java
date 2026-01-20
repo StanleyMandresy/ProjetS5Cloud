@@ -3,7 +3,7 @@ package com.example.route.dto;
 import java.time.LocalDateTime;
 
 public class UserResponse {
-    private Long id;
+    private Integer id;
     private String username;
     private String email;
     private Boolean isActive;
@@ -12,7 +12,7 @@ public class UserResponse {
     // Constructeurs
     public UserResponse() {}
     
-    public UserResponse(Long id, String username, String email, Boolean isActive, LocalDateTime createdAt) {
+    public UserResponse(Integer id, String username, String email, Boolean isActive, LocalDateTime createdAt) {
         this.id = id;
         this.username = username;
         this.email = email;
@@ -21,11 +21,11 @@ public class UserResponse {
     }
     
     // Getters et Setters
-    public Long getId() {
+    public Integer getId() {
         return id;
     }
     
-    public void setId(Long id) {
+    public void setId(Integer id) {
         this.id = id;
     }
     

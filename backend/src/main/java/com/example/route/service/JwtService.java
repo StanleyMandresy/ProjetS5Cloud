@@ -8,8 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import com.example.route.model.User;
-
+import com.example.route.model.Utilisateur;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
@@ -28,15 +27,13 @@ public class JwtService {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
     
-    public String generateToken(User user) {
+    public String generateToken(Utilisateur user) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("userId", user.getId());
-        claims.put("username", user.getUsername());
+        claims.put("userId", user.getIdUtilisateur());
+        claims.put("username", user.getNom());
         claims.put("email", user.getEmail());
-
-
         
-        return createToken(claims, user.getUsername());
+        return createToken(claims, user.getNom());
     }
     
     private String createToken(Map<String, Object> claims, String subject) {
