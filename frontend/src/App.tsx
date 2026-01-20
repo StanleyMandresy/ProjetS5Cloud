@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
+import Map from './Map'; // imported from ensemble branch
 import './App.css';
 
 const App: React.FC = () => {
@@ -31,6 +32,17 @@ const App: React.FC = () => {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/map"
+            element={
+              <ProtectedRoute>
+                <div className="App">
+                  <h1>Carte d'Antananarivo</h1>
+                  <Map />
+                </div>
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
@@ -39,3 +51,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+

@@ -1,4 +1,4 @@
-version: "3.9"
+version: '3.8'
 
 services:
   postgres:
@@ -13,7 +13,7 @@ services:
     build: ./backend
     container_name: spring_backend
     ports:
-      - "8080:8080"
+      - "8081:8081"
     depends_on:
       - postgres
     environment:
@@ -25,11 +25,22 @@ services:
 
   frontend:
     build: ./frontend
-    container_name: react_frontend
+    container_name: frontend_react
     ports:
-      - "3000:3000"
+      - "3000:5173"
     depends_on:
       - backend
+
+  # SERVEUR DE CARTES SIMPLIFIÉ
+  tileserver:
+    image: klokantech/tileserver-gl
+    container_name: tileserver
+    ports:
+      - "8000:80"
+    volumes:
+      - ./docker/tileserver/data:/data
+
+
 
 volumes:
   postgres_data:

@@ -1,0 +1,24 @@
+{
+  "options": {
+    "paths": {
+      "root": "",
+      "fonts": "fonts",
+      "sprites": "sprites"
+    }
+  },
+  "styles": {
+    "default": {
+      "style": "",
+      "tilejson": {
+        "bounds": [47.4, -18.95, 47.55, -18.85],
+        "minzoom": 10,
+        "maxzoom": 18
+      }
+    }
+  },
+  "data": {
+    "antananarivo": {
+      "mbtiles": "data.mbtiles"
+    }
+  }
+}
