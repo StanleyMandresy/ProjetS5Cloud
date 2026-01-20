@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.route.dto.*;
-import com.example.route.model.User;
+import com.example.route.model.Utilisateur;
 import com.example.route.service.AuthService;
 import com.example.route.service.CustomUserDetailsService;
 
@@ -57,7 +57,7 @@ public class AuthController {
             // Créer la réponse
             AuthResponse authResponse = new AuthResponse(
                 (String) response.get("message"),
-                (Long) response.get("userId"),
+                ((Integer) response.get("userId")).longValue(),
                 (String) response.get("username"),
                 (String) response.get("email"),
                 (String) response.get("token")
@@ -93,7 +93,7 @@ public class AuthController {
             // Créer la réponse
             AuthResponse authResponse = new AuthResponse(
                 (String) response.get("message"),
-                (Long) response.get("userId"),
+                ((Integer) response.get("userId")).longValue(),
                 (String) response.get("username"),
                 (String) response.get("email"),
                 (String) response.get("token")
@@ -113,7 +113,7 @@ public class AuthController {
      */
     @PutMapping("/profile/{userId}")
     public ResponseEntity<?> updateProfile(
-            @PathVariable Long userId,
+            @PathVariable Integer userId,
             @Valid @RequestBody UpdateUserRequest request,
             BindingResult bindingResult) {
         try {
@@ -135,7 +135,7 @@ public class AuthController {
             // Créer la réponse
             AuthResponse authResponse = new AuthResponse(
                 (String) response.get("message"),
-                (Long) response.get("userId"),
+                ((Integer) response.get("userId")).longValue(),
                 (String) response.get("username"),
                 (String) response.get("email"),
                 (String) response.get("token")
@@ -154,13 +154,13 @@ public class AuthController {
      * GET /api/auth/profile/{userId}
      */
     @GetMapping("/profile/{userId}")
-    public ResponseEntity<?> getProfile(@PathVariable Long userId) {
+    public ResponseEntity<?> getProfile(@PathVariable Integer userId) {
         try {
-            User user = authService.getUserById(userId);
+            Utilisateur user = authService.getUserById(userId);
             
             UserResponse userResponse = new UserResponse(
-                user.getId(),
-                user.getUsername(),
+                user.getIdUtilisateur(),
+                user.getNom(),
                 user.getEmail(),
                 user.getIsActive(),
                 user.getCreatedAt()
