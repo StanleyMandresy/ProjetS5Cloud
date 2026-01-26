@@ -6,6 +6,9 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
+import { TravauxProvider } from "./context/TravauxContext";
+
+
 
 import './App.css';
 
@@ -13,6 +16,7 @@ const App: React.FC = () => {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <TravauxProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -35,6 +39,8 @@ const App: React.FC = () => {
         
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        
+        </TravauxProvider>
       </AuthProvider>
     </BrowserRouter>
   );
