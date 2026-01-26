@@ -1,21 +1,21 @@
-# Étape 1 : build
-FROM eclipse-temurin:17-jdk-alpine AS build
+# Étape 1 : build avec Maven
+FROM maven:3.9.6-eclipse-temurin-17 AS build
+
 WORKDIR /app
 
-# Copier pom.xml et code source
 COPY pom.xml .
-COPY src ./src
+RUN mvn dependency:go-offline
 
-# Compiler le projet et générer le JAR
+COPY src ./src
 RUN mvn clean package -DskipTests
 
-# Étape 2 : runtime
-FROM eclipse-temurin:17-jdk-alpine AS runtime
+# Étape 2 : runtime (image légère)
+FROM eclipse-temurin:17-jre
+
 WORKDIR /app
 
-# Copier le JAR généré depuis l'étape précédente
 COPY --from=build /app/target/*.jar app.jar
 
-EXPOSE 8080
+EXPOSE 8081
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+CMD ["java", "-jar", "app.jar"]

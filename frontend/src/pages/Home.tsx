@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import Map from '../components/Map';
 
 const Home: React.FC = () => {
   const { user, logout } = useAuth();
@@ -67,6 +68,7 @@ const Home: React.FC = () => {
             </div>
           </div>
         </div>
+
 
         {/* Info Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -153,6 +155,14 @@ const Home: React.FC = () => {
             <span>Modifier mon profil</span>
           </button>
         </div>
+
+
+        {/* Map Container */}
+<div className="mt-16 flex justify-center">
+  <div className="w-full max-w-4xl h-[400px] bg-white/10 backdrop-blur-lg rounded-3xl border border-white/20 shadow-2xl">
+    <Map />
+  </div>
+</div>
       </div>
     </div>
   );

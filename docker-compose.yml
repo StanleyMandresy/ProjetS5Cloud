@@ -1,13 +1,23 @@
-version: '3.8'
+version: "3.8"
 
 services:
+
   postgres:
-    build: ./docker/postgres
+    image: postgis/postgis:15-3.4
     container_name: postgres_postgis
     ports:
       - "5433:5432"
+    environment:
+      POSTGRES_DB: projet-cloud-db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d projet-cloud-db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   backend:
     build: ./backend
@@ -15,13 +25,16 @@ services:
     ports:
       - "8081:8081"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     environment:
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: projet-cloud-db
       DB_USER: admin
       DB_PASSWORD: admin
+      SPRING_PROFILES_ACTIVE: docker
+    restart: on-failure
 
   frontend:
     build: ./frontend
@@ -31,7 +44,6 @@ services:
     depends_on:
       - backend
 
-  # SERVEUR DE CARTES SIMPLIFIÉ
   tileserver:
     image: klokantech/tileserver-gl
     container_name: tileserver
@@ -39,8 +51,6 @@ services:
       - "8000:80"
     volumes:
       - ./docker/tileserver/data:/data
-
-
 
 volumes:
   postgres_data:
