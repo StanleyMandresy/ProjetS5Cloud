@@ -2,6 +2,7 @@ package com.example.route.service;
 
 import com.example.route.dto.CreatePointReparationRequest;
 import com.example.route.dto.PointReparationDTO;
+import com.example.route.dto.StatistiquesDTO;
 import com.example.route.dto.UpdatePointReparationRequest;
 import com.example.route.model.Entreprise;
 import com.example.route.model.PointDeReparation;
@@ -181,6 +182,55 @@ public class PointReparationService {
             row[8] != null ? ((Number) row[8]).doubleValue() : null,  // longitude
             (String) row[9],            // entrepriseNom
             (String) row[10]            // utilisateurNom
+        );
+    }
+    
+    public StatistiquesDTO getStatistiques() {
+        List<PointDeReparation> allPoints = pointRepository.findAll();
+        
+        int nombrePoints = allPoints.size();
+        
+        // Calcul de la surface totale
+        Float surfaceTotale = allPoints.stream()
+            .map(PointDeReparation::getSurfaceM2)
+            .filter(s -> s != null)
+            .reduce(0f, Float::sum);
+        
+        // Calcul du budget total
+        BigDecimal budgetTotal = allPoints.stream()
+            .map(PointDeReparation::getBudget)
+            .filter(b -> b != null)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        // Comptage par statut
+        long pointsNouveau = allPoints.stream()
+            .filter(p -> "NOUVEAU".equals(p.getStatut()))
+            .count();
+        
+        long pointsEnCours = allPoints.stream()
+            .filter(p -> "EN_COURS".equals(p.getStatut()))
+            .count();
+        
+        long pointsTermine = allPoints.stream()
+            .filter(p -> "TERMINE".equals(p.getStatut()))
+            .count();
+        
+        // Calcul de l'avancement en pourcentage
+        // NOUVEAU = 0%, EN_COURS = 50%, TERMINE = 100%
+        double avancement = 0.0;
+        if (nombrePoints > 0) {
+            double totalPourcentage = (pointsEnCours * 50.0) + (pointsTermine * 100.0);
+            avancement = totalPourcentage / nombrePoints;
+        }
+        
+        return new StatistiquesDTO(
+            nombrePoints,
+            surfaceTotale,
+            budgetTotal,
+            Math.round(avancement * 100.0) / 100.0, // Arrondi à 2 décimales
+            (int) pointsNouveau,
+            (int) pointsEnCours,
+            (int) pointsTermine
         );
     }
 }

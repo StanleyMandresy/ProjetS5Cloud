@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTravaux } from '../context/TravauxContext';
-import { travauxService, CreateTravailRequest, UpdateTravailRequest } from '../services/travaux.service';
+import { travauxService } from '../services/travaux.service';
+import type { CreateTravailRequest, UpdateTravailRequest, Statistiques } from '../types/travaux.types';
 import { useNavigate } from 'react-router-dom';
 
 const Manager: React.FC = () => {
@@ -12,6 +13,7 @@ const Manager: React.FC = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [filterStatut, setFilterStatut] = useState<string>('TOUS');
+  const [statistiques, setStatistiques] = useState<Statistiques | null>(null);
   
   const [formData, setFormData] = useState<CreateTravailRequest>({
     titre: '',
@@ -22,6 +24,20 @@ const Manager: React.FC = () => {
     surfaceM2: undefined,
     budget: undefined,
   });
+
+  // Charger les statistiques au montage du composant
+  useEffect(() => {
+    loadStatistiques();
+  }, [travaux]); // Recharger quand travaux change
+
+  const loadStatistiques = async () => {
+    try {
+      const stats = await travauxService.getStatistiques();
+      setStatistiques(stats);
+    } catch (error) {
+      console.error('Erreur chargement statistiques:', error);
+    }
+  };
 
   // Vérifier si l'utilisateur est MANAGER
   if (user?.role !== 'MANAGER') {
@@ -146,6 +162,73 @@ const Manager: React.FC = () => {
                 onClick={() => navigate('/')}
                 className="px-4 py-2 text-white hover:bg-white/10 rounded-lg transition-all"
               >
+        {/* Tableau de Statistiques */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-300 text-sm mb-1">Nombre de Points</p>
+                <p className="text-3xl font-bold text-white">{statistiques?.nombrePoints || 0}</p>
+              </div>
+              <div className="bg-blue-500/20 rounded-full p-3">
+                <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-300 text-sm mb-1">Surface Totale</p>
+                <p className="text-3xl font-bold text-white">{statistiques?.surfaceTotaleM2?.toFixed(0) || 0}</p>
+                <p className="text-gray-400 text-xs mt-1">m²</p>
+              </div>
+              <div className="bg-green-500/20 rounded-full p-3">
+                <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-300 text-sm mb-1">Avancement</p>
+                <p className="text-3xl font-bold text-white">{statistiques?.avancementPourcentage?.toFixed(1) || 0}%</p>
+                <div className="w-full bg-gray-700 rounded-full h-2 mt-2">
+                  <div 
+                    className="bg-gradient-to-r from-yellow-500 to-green-500 h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${statistiques?.avancementPourcentage || 0}%` }}
+                  ></div>
+                </div>
+              </div>
+              <div className="bg-yellow-500/20 rounded-full p-3">
+                <svg className="w-8 h-8 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-300 text-sm mb-1">Budget Total</p>
+                <p className="text-3xl font-bold text-white">{statistiques?.budgetTotal?.toLocaleString() || 0}</p>
+                <p className="text-gray-400 text-xs mt-1">Ar</p>
+              </div>
+              <div className="bg-purple-500/20 rounded-full p-3">
+                <svg className="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
                 Accueil
               </button>
               <button

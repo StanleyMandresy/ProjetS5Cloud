@@ -60,7 +60,8 @@ public class AuthController {
                 (Long) response.get("userId"),
                 (String) response.get("username"),
                 (String) response.get("email"),
-                (String) response.get("token")
+                (String) response.get("token"),
+                (String) response.get("role")
             );
             
             return ResponseEntity.status(HttpStatus.CREATED).body(authResponse);
@@ -96,7 +97,8 @@ public class AuthController {
                 (Long) response.get("userId"),
                 (String) response.get("username"),
                 (String) response.get("email"),
-                (String) response.get("token")
+                (String) response.get("token"),
+                (String) response.get("role")
             );
             
             return ResponseEntity.ok(authResponse);
@@ -138,7 +140,8 @@ public class AuthController {
                 (Long) response.get("userId"),
                 (String) response.get("username"),
                 (String) response.get("email"),
-                (String) response.get("token")
+                (String) response.get("token"),
+                (String) response.get("role")
             );
             
             return ResponseEntity.ok(authResponse);

@@ -2,6 +2,7 @@ package com.example.route.controller;
 
 import com.example.route.dto.CreatePointReparationRequest;
 import com.example.route.dto.PointReparationDTO;
+import com.example.route.dto.StatistiquesDTO;
 import com.example.route.dto.UpdatePointReparationRequest;
 import com.example.route.service.PointReparationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,6 +33,13 @@ public class PointReparationController {
                description = "Accessible à tous les utilisateurs authentifiés")
     public ResponseEntity<List<PointReparationDTO>> getAllPoints() {
         return ResponseEntity.ok(pointReparationService.getAllPoints());
+    }
+    
+    @GetMapping("/statistiques")
+    @Operation(summary = "Récupérer les statistiques globales", 
+               description = "Retourne nombre de points, surface totale, avancement et budget total")
+    public ResponseEntity<StatistiquesDTO> getStatistiques() {
+        return ResponseEntity.ok(pointReparationService.getStatistiques());
     }
     
     @GetMapping("/points/statut/{statut}")

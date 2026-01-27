@@ -54,6 +54,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         email: response.email,
         isActive: true,
         createdAt: new Date().toISOString(),
+        role: response.role,
       };
 
       setToken(response.token);
@@ -76,6 +77,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         email: response.email,
         isActive: true,
         createdAt: new Date().toISOString(),
+        role: response.role,
       };
 
       setToken(response.token);

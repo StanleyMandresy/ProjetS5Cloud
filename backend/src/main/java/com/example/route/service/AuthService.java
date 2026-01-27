@@ -55,6 +55,7 @@ public class AuthService {
         response.put("username", savedUser.getNom());
         response.put("email", savedUser.getEmail());
         response.put("token", token);
+        response.put("role", savedUser.getRole());
         
         return response;
     }
@@ -79,6 +80,7 @@ public class AuthService {
         response.put("username", user.getNom());
         response.put("email", user.getEmail());
         response.put("token", token);
+        response.put("role", user.getRole());
         
         return response;
     }
@@ -131,6 +133,7 @@ public class AuthService {
         response.put("username", updatedUser.getNom());
         response.put("email", updatedUser.getEmail());
         response.put("token", token);
+        response.put("role", updatedUser.getRole());
         
         return response;
     }

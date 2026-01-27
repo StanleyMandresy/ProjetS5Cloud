@@ -4,6 +4,7 @@ export interface User {
   email: string;
   isActive: boolean;
   createdAt: string;
+  role?: string;
 }
 
 export interface AuthResponse {
@@ -12,6 +13,7 @@ export interface AuthResponse {
   username: string;
   email: string;
   token: string;
+  role: string;
 }
 
 export interface LoginRequest {

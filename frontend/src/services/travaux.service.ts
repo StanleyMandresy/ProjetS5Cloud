@@ -1,48 +1,16 @@
 import api from "./api";
-
-/**
- * Représente un point de réparation affiché sur la carte
- */
-export interface Travail {
-  id: number;
-  titre: string;
-  description: string;
-  dateSignalement?: string;
-  statut: "NOUVEAU" | "EN_COURS" | "TERMINE";
-  surfaceM2?: number;
-  budget?: string;
-  latitude: number;
-  longitude: number;
-  entrepriseNom?: string;
-  utilisateurNom?: string;
-}
-
-export interface CreateTravailRequest {
-  titre: string;
-  description?: string;
-  latitude: number;
-  longitude: number;
-  statut?: "NOUVEAU" | "EN_COURS" | "TERMINE";
-  surfaceM2?: number;
-  budget?: number;
-  entrepriseId?: number;
-}
-
-export interface UpdateTravailRequest {
-  titre?: string;
-  description?: string;
-  latitude?: number;
-  longitude?: number;
-  statut?: "NOUVEAU" | "EN_COURS" | "TERMINE";
-  surfaceM2?: number;
-  budget?: number;
-  entrepriseId?: number;
-}
+import type { Travail, CreateTravailRequest, UpdateTravailRequest, Statistiques } from "../types/travaux.types";
 
 export const travauxService = {
   // Récupérer tous les points pour la carte
   async getAll(): Promise<Travail[]> {
     const response = await api.get<Travail[]>("/travaux/points");
+    return response.data;
+  },
+
+  // Récupérer les statistiques globales
+  async getStatistiques(): Promise<Statistiques> {
+    const response = await api.get<Statistiques>("/travaux/statistiques");
     return response.data;
   },
 
