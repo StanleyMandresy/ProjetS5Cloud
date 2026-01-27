@@ -1,8 +1,9 @@
-version: "3.8"
-
 services:
 
   postgres:
+    build:
+      context: ./docker/postgres
+      dockerfile: Dockerfile
     image: projets5cloud-postgres:latest
     container_name: postgres_postgis
     ports:
