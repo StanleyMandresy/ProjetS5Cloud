@@ -7,7 +7,7 @@ import Register from './pages/Register';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
 import { TravauxProvider } from "./context/TravauxContext";
-
+import { SignalementProvider } from './context/SignalementContext';
 
 
 import './App.css';
@@ -17,6 +17,7 @@ const App: React.FC = () => {
     <BrowserRouter>
       <AuthProvider>
         <TravauxProvider>
+          <SignalementProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -40,6 +41,7 @@ const App: React.FC = () => {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         
+        </SignalementProvider>
         </TravauxProvider>
       </AuthProvider>
     </BrowserRouter>

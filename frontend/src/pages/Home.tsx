@@ -2,11 +2,12 @@ import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import Map from '../components/Map';
+import { useSignalements } from '../context/SignalementContext';
 
 const Home: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-
+  const { syncSignalements, loading } = useSignalements();
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -162,7 +163,17 @@ const Home: React.FC = () => {
   <div className="w-full max-w-4xl h-[400px] bg-white/10 backdrop-blur-lg rounded-3xl border border-white/20 shadow-2xl">
     <Map />
   </div>
+
+  <button
+  onClick={syncSignalements}
+  disabled={loading}
+  className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-semibold shadow-lg disabled:opacity-50"
+>
+  {loading ? "Synchronisation..." : "Synchroniser les signalements"}
+</button>
 </div>
+
+
       </div>
     </div>
   );
