@@ -15,7 +15,7 @@
 -- =========================
 INSERT INTO utilisateur (nom, email, mot_de_passe, role) 
 VALUES 
-    ('Manager Principal', 'manager@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'MANAGER'),
+    ('Manager01', 'manager@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'MANAGER'),
     ('Chef de Projet', 'chef.projet@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'MANAGER')
 ON CONFLICT (email) DO NOTHING;
 
@@ -43,3 +43,4 @@ ON CONFLICT (email) DO NOTHING;
 \echo 'Utilisateurs créés :';
 \echo '========================================';
 SELECT id_utilisateur, nom, email, role FROM utilisateur ORDER BY role, id_utilisateur;
+-- UPDATE utilisateur SET role = 'MANAGER' WHERE id_utilisateur=60;
