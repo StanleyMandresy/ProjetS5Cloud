@@ -16,11 +16,10 @@ const Map = () => {
       maxZoom: 20,
     }).addTo(map);
 
-    // --- MARQUEURS DEPUIS LA DB ---
+  
     travaux.forEach((t) => {
       if (!t.latitude || !t.longitude) return;
-
-      L.marker([t.latitude, t.longitude])
+      L.marker([t.latitude, t.longitude], { color: "red" })
         .addTo(map)
         .bindPopup(`
           <strong>${t.titre}</strong><br/>
