@@ -15,7 +15,7 @@ const Sidebar: React.FC = () => {
 
   const menuItems = [
     { icon: '🏠', label: 'Accueil', path: '/', badge: null },
-    { icon: '📦', label: 'Ventes', path: '/ventes', badge: '12' },
+
     { icon: '👤', label: 'Profil', path: '/profile', badge: null },
     ...(user?.role === 'MANAGER' 
       ? [{ icon: '📊', label: 'Dashboard', path: '/manager', badge: 'NEW' }] 
