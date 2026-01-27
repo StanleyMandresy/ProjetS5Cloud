@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTravaux } from '../context/TravauxContext';
 import { travauxService } from '../services/travaux.service';
@@ -18,11 +18,15 @@ import {
   AlertCircle,
   CheckCircle2
 } from 'lucide-react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 const Manager: React.FC = () => {
   const { user } = useAuth();
   const { travaux, refresh } = useTravaux();
   const navigate = useNavigate();
+  const mapRef = useRef<L.Map | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
   
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -42,6 +46,62 @@ const Manager: React.FC = () => {
   useEffect(() => {
     loadStatistiques();
   }, [travaux]);
+
+  useEffect(() => {
+    if (showCreateForm) {
+      initMap();
+    }
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, [showCreateForm]);
+
+  const initMap = () => {
+    setTimeout(() => {
+      const mapContainer = document.getElementById('map-container');
+      if (!mapContainer || mapRef.current) return;
+
+      // Initialiser la carte centrée sur Madagascar
+      const map = L.map('map-container').setView([formData.latitude, formData.longitude], 6);
+      mapRef.current = map;
+
+      // Ajouter le layer OpenStreetMap
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 18,
+      }).addTo(map);
+
+      // Ajouter un marker initial
+      const marker = L.marker([formData.latitude, formData.longitude], {
+        draggable: true,
+      }).addTo(map);
+      markerRef.current = marker;
+
+      // Mettre à jour les coordonnées quand on déplace le marker
+      marker.on('dragend', () => {
+        const position = marker.getLatLng();
+        setFormData(prev => ({
+          ...prev,
+          latitude: position.lat,
+          longitude: position.lng,
+        }));
+      });
+
+      // Ajouter un marker en cliquant sur la carte
+      map.on('click', (e: L.LeafletMouseEvent) => {
+        const { lat, lng } = e.latlng;
+        marker.setLatLng([lat, lng]);
+        setFormData(prev => ({
+          ...prev,
+          latitude: lat,
+          longitude: lng,
+        }));
+      });
+    }, 100);
+  };
 
   const loadStatistiques = async () => {
     try {
@@ -146,6 +206,14 @@ const Manager: React.FC = () => {
     setShowCreateForm(true);
   };
 
+  // Mettre à jour le marker quand les coordonnées changent manuellement
+  useEffect(() => {
+    if (markerRef.current && mapRef.current) {
+      markerRef.current.setLatLng([formData.latitude, formData.longitude]);
+      mapRef.current.setView([formData.latitude, formData.longitude]);
+    }
+  }, [formData.latitude, formData.longitude]);
+
   const filteredTravaux = filterStatut === 'TOUS' 
     ? travaux 
     : travaux.filter(t => t.statut === filterStatut);
@@ -175,7 +243,7 @@ const Manager: React.FC = () => {
       <Sidebar />
       
       {/* Main Content */}
-      <main className="flex-1 ml-72 p-8">
+      <main className="flex-1 lg:ml-72 p-4 md:p-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard Manager</h1>
@@ -263,7 +331,7 @@ const Manager: React.FC = () => {
                   onClick={() => setFilterStatut(status)}
                   className={`px-4 py-2 rounded-xl font-semibold transition-all duration-200 ${
                     filterStatut === status
-                      ? 'bg-gradient-to-r from-itu-accent to-purple-600 text-white shadow-lg shadow-itu-accent/30'
+                      ? 'bg-black text-white shadow-lg shadow-itu-accent/30'
                       : 'bg-itu-lighter text-gray-700 hover:bg-itu-purple'
                   }`}
                 >
@@ -277,7 +345,7 @@ const Manager: React.FC = () => {
                 setEditingId(null);
                 setShowCreateForm(true);
               }}
-              className="px-6 py-3 bg-gradient-to-r from-itu-accent to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-itu-accent/50 transition-all flex items-center gap-2"
+              className="px-6 py-3 bg-black text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-itu-accent/50 transition-all flex items-center gap-2"
             >
               <Plus className="w-5 h-5" />
               Nouveau Point
@@ -288,10 +356,20 @@ const Manager: React.FC = () => {
         {/* Form Modal */}
         {showCreateForm && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
               <div className="bg-gradient-to-r from-itu-accent to-purple-600 p-6 flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-white">
-                  {editingId ? 'Modifier le point' : 'Nouveau point de réparation'}
+                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                  {editingId ? (
+                    <>
+                      <Edit className="w-6 h-6" />
+                      Modifier le point
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-6 h-6" />
+                      Nouveau point de réparation
+                    </>
+                  )}
                 </h2>
                 <button
                   onClick={() => {
@@ -310,8 +388,33 @@ const Manager: React.FC = () => {
                   e.preventDefault();
                   editingId ? handleUpdate(editingId) : handleCreate(e);
                 }}
-                className="p-6 space-y-4"
+                className="p-6 space-y-6"
               >
+                {/* Carte de Madagascar */}
+                <div className="bg-gradient-to-br from-blue-50 to-purple-50 p-4 rounded-2xl border-2 border-blue-200">
+                  <div className="flex items-center gap-2 mb-3">
+                    <MapPin className="w-5 h-5 text-itu-accent" />
+                    <h3 className="text-lg font-bold text-gray-900">Sélectionner l'emplacement</h3>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Cliquez sur la carte ou déplacez le marqueur pour définir la position
+                  </p>
+                  <div 
+                    id="map-container" 
+                    className="w-full h-80 rounded-xl overflow-hidden shadow-lg border-2 border-white"
+                  />
+                  <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                    <div className="bg-white p-3 rounded-lg shadow-sm">
+                      <span className="text-gray-600 font-medium">Latitude:</span>
+                      <span className="ml-2 font-bold text-itu-accent">{formData.latitude.toFixed(6)}</span>
+                    </div>
+                    <div className="bg-white p-3 rounded-lg shadow-sm">
+                      <span className="text-gray-600 font-medium">Longitude:</span>
+                      <span className="ml-2 font-bold text-itu-accent">{formData.longitude.toFixed(6)}</span>
+                    </div>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Titre</label>
                   <input
@@ -319,6 +422,7 @@ const Manager: React.FC = () => {
                     value={formData.titre}
                     onChange={(e) => setFormData({ ...formData, titre: e.target.value })}
                     required
+                    placeholder="Ex: Réparation route RN7"
                     className="w-full px-4 py-3 border-2 border-itu-gray/30 rounded-xl focus:border-itu-accent focus:ring-4 focus:ring-itu-accent/10 transition-all outline-none"
                   />
                 </div>
@@ -330,29 +434,34 @@ const Manager: React.FC = () => {
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     required
                     rows={3}
-                    className="w-full px-4 py-3 border-2 border-itu-gray/30 rounded-xl focus:border-itu-accent focus:ring-4 focus:ring-itu-accent/10 transition-all outline-none"
+                    placeholder="Décrivez les travaux à effectuer..."
+                    className="w-full px-4 py-3 border-2 border-itu-gray/30 rounded-xl focus:border-itu-accent focus:ring-4 focus:ring-itu-accent/10 transition-all outline-none resize-none"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Latitude</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Latitude
+                    </label>
                     <input
                       type="number"
                       step="any"
                       value={formData.latitude}
-                      onChange={(e) => setFormData({ ...formData, latitude: parseFloat(e.target.value) })}
+                      onChange={(e) => setFormData({ ...formData, latitude: parseFloat(e.target.value) || -18.8792 })}
                       required
                       className="w-full px-4 py-3 border-2 border-itu-gray/30 rounded-xl focus:border-itu-accent focus:ring-4 focus:ring-itu-accent/10 transition-all outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Longitude</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Longitude
+                    </label>
                     <input
                       type="number"
                       step="any"
                       value={formData.longitude}
-                      onChange={(e) => setFormData({ ...formData, longitude: parseFloat(e.target.value) })}
+                      onChange={(e) => setFormData({ ...formData, longitude: parseFloat(e.target.value) || 47.5079 })}
                       required
                       className="w-full px-4 py-3 border-2 border-itu-gray/30 rounded-xl focus:border-itu-accent focus:ring-4 focus:ring-itu-accent/10 transition-all outline-none"
                     />
@@ -366,36 +475,42 @@ const Manager: React.FC = () => {
                     onChange={(e) => setFormData({ ...formData, statut: e.target.value as any })}
                     className="w-full px-4 py-3 border-2 border-itu-gray/30 rounded-xl focus:border-itu-accent focus:ring-4 focus:ring-itu-accent/10 transition-all outline-none"
                   >
-                    <option value="NOUVEAU">Nouveau</option>
-                    <option value="EN_COURS">En cours</option>
-                    <option value="TERMINE">Terminé</option>
+                    <option value="NOUVEAU">🔴 Nouveau</option>
+                    <option value="EN_COURS">🟠 En cours</option>
+                    <option value="TERMINE">🟢 Terminé</option>
                   </select>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Surface (m²)</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Surface (m²)
+                    </label>
                     <input
                       type="number"
                       step="0.01"
                       value={formData.surfaceM2 || ''}
                       onChange={(e) => setFormData({ ...formData, surfaceM2: e.target.value ? parseFloat(e.target.value) : undefined })}
+                      placeholder="Ex: 150.5"
                       className="w-full px-4 py-3 border-2 border-itu-gray/30 rounded-xl focus:border-itu-accent focus:ring-4 focus:ring-itu-accent/10 transition-all outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Budget (Ar)</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Budget (Ar)
+                    </label>
                     <input
                       type="number"
                       step="0.01"
                       value={formData.budget || ''}
                       onChange={(e) => setFormData({ ...formData, budget: e.target.value ? parseFloat(e.target.value) : undefined })}
+                      placeholder="Ex: 5000000"
                       className="w-full px-4 py-3 border-2 border-itu-gray/30 rounded-xl focus:border-itu-accent focus:ring-4 focus:ring-itu-accent/10 transition-all outline-none"
                     />
                   </div>
                 </div>
 
-                <div className="flex gap-3 pt-4">
+                <div className="flex gap-3 pt-4 border-t border-itu-gray/30">
                   <button
                     type="button"
                     onClick={() => {
@@ -403,16 +518,17 @@ const Manager: React.FC = () => {
                       setEditingId(null);
                       resetForm();
                     }}
-                    className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-all"
+                    className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-all flex items-center justify-center gap-2"
                   >
+                    <X className="w-5 h-5" />
                     Annuler
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-6 py-3 bg-gradient-to-r from-itu-accent to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-itu-accent/50 transition-all flex items-center justify-center gap-2"
+                    className="flex-1 px-6 py-3 bg-black to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-itu-accent/50 transition-all flex items-center justify-center gap-2"
                   >
                     <Save className="w-5 h-5" />
-                    {editingId ? 'Mettre à jour' : 'Créer'}
+                    {editingId ? 'Mettre à jour' : 'Créer le point'}
                   </button>
                 </div>
               </form>
