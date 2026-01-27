@@ -357,7 +357,7 @@ const Manager: React.FC = () => {
         {showCreateForm && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-              <div className="bg-gradient-to-r from-itu-accent to-purple-600 p-6 flex items-center justify-between">
+              <div className="bg-black p-6 flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-white flex items-center gap-2">
                   {editingId ? (
                     <>
