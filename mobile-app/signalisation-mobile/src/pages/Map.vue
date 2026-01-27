@@ -33,6 +33,17 @@
         </ion-fab-button>
       </ion-fab>
 
+      <!-- Toggle Mes signalements -->
+      <ion-fab vertical="top" horizontal="end" slot="fixed" style="margin-top: 60px;">
+        <ion-fab-button 
+          :color="showOnlyMyReports ? 'success' : 'medium'"
+          @click="toggleMyReports"
+          size="small"
+        >
+          {{ showOnlyMyReports ? '👤' : '🌍' }}
+        </ion-fab-button>
+      </ion-fab>
+
     </ion-content>
   </ion-page>
 </template>
@@ -48,13 +59,15 @@ import {
   IonFabButton,
   IonRefresher,
   IonRefresherContent,
-  onIonViewDidEnter
+  onIonViewDidEnter,
+  toastController
 } from '@ionic/vue'
-import { onBeforeUnmount } from 'vue'
+import { onBeforeUnmount, ref } from 'vue'
 
 import * as L from 'leaflet'
 import { useRouter } from 'vue-router'
 import { reportService, type Report } from '@/services/report.service'
+import { auth } from '@/firebase/firebase'
 
 const router = useRouter()
 
@@ -64,6 +77,10 @@ let userMarker: L.Marker | null = null
 let tempMarker: L.Marker | null = null
 let reportMarkers: L.Layer[] = []
 let unsubscribe: (() => void) | null = null
+let allReports: Report[] = []
+
+// 🔍 État du filtre
+const showOnlyMyReports = ref(false)
 
 // 📍 Initialisation carte
 const initMap = () => {
@@ -123,12 +140,20 @@ const loadReportsOnMap = async () => {
 const displayReports = (reports: Report[]) => {
   if (!map) return
 
+  // Sauvegarder tous les signalements
+  allReports = reports
+
+  // Filtrer selon l'état du toggle
+  const reportsToShow = showOnlyMyReports.value 
+    ? reports.filter(r => r.userId === auth.currentUser?.uid)
+    : reports
+
   // Nettoyage anciens marqueurs
   reportMarkers.forEach(marker => map!.removeLayer(marker))
   reportMarkers = []
 
   // Ajout nouveaux marqueurs
-  reports.forEach(report => {
+  reportsToShow.forEach(report => {
     const color = getColorByStatus(report.status)
 
     const marker = L.circleMarker(
@@ -143,11 +168,33 @@ const displayReports = (reports: Report[]) => {
       .addTo(map!)
       .bindPopup(`
         <b>${report.description || 'Sans description'}</b><br/>
-        📌 Statut : ${report.status}
+        📌 Statut : ${report.status}<br/>
+        👤 ${report.userId === auth.currentUser?.uid ? 'Mon signalement' : 'Autre utilisateur'}
       `)
 
     reportMarkers.push(marker)
   })
+}
+
+// 🔍 Toggle "Mes signalements"
+const toggleMyReports = async () => {
+  showOnlyMyReports.value = !showOnlyMyReports.value
+
+  // Réafficher avec le filtre
+  displayReports(allReports)
+
+  // Message de confirmation
+  const message = showOnlyMyReports.value 
+    ? '👤 Affichage : Mes signalements uniquement'
+    : '🌍 Affichage : Tous les signalements'
+
+  const toast = await toastController.create({
+    message,
+    duration: 2000,
+    position: 'top',
+    color: showOnlyMyReports.value ? 'success' : 'primary'
+  })
+  await toast.present()
 }
 
 // 🔴 Écoute en temps réel des signalements Firebase
