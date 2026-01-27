@@ -11,9 +11,10 @@ const Map = () => {
 
     const map = L.map("map").setView([-18.8792, 47.5079], 13);
 
-    L.tileLayer("http://localhost:8000/styles/osm-bright/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap",
-      maxZoom: 20,
+    // Utilisation d'OpenStreetMap standard
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap contributors",
+      maxZoom: 19,
     }).addTo(map);
 
     // --- MARQUEURS DEPUIS LA DB ---

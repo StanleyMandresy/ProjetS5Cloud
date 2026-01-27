@@ -1,3 +1,4 @@
+-- Active: 1765874928894@@127.0.0.1@5432@projetclouddb
 -- Activer PostGIS
 CREATE EXTENSION IF NOT EXISTS postgis;
 

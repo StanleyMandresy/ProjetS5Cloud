@@ -3,7 +3,7 @@ version: "3.8"
 services:
 
   postgres:
-    image: postgis/postgis:15-3.4
+    image: projets5cloud-postgres:latest
     container_name: postgres_postgis
     ports:
       - "5433:5432"
@@ -45,10 +45,10 @@ services:
       - backend
 
   tileserver:
-    image: klokantech/tileserver-gl
+    image: maptiler/tileserver-gl
     container_name: tileserver
     ports:
-      - "8000:80"
+      - "8000:8080"
     volumes:
       - ./docker/tileserver/data:/data
 

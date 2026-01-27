@@ -4,7 +4,7 @@
   "sources": {
     "antananarivo": {
       "type": "vector",
-      "url": "mbtiles://data/antananarivo.mbtiles"
+      "url": "mbtiles://{antananarivo}"
     }
   },
   "sprite": "",
