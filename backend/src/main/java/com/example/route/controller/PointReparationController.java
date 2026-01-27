@@ -1,41 +1,80 @@
 package com.example.route.controller;
 
-import jakarta.servlet.http.HttpSession;
-
-
-import java.util.*;
-import com.example.route.repository.PointDeReparationRepository;
-
+import com.example.route.dto.CreatePointReparationRequest;
+import com.example.route.dto.PointReparationDTO;
+import com.example.route.dto.UpdatePointReparationRequest;
+import com.example.route.service.PointReparationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/travaux")
-@CrossOrigin
+@CrossOrigin(origins = "*")
+@Tag(name = "Points de Réparation", description = "Gestion des travaux routiers")
 public class PointReparationController {
 
-    private final PointDeReparationRepository repository;
+    private final PointReparationService pointReparationService;
 
-    public PointReparationController(PointDeReparationRepository repository) {
-        this.repository = repository;
+    public PointReparationController(PointReparationService pointReparationService) {
+        this.pointReparationService = pointReparationService;
     }
 
     @GetMapping("/points")
-    public List<Map<String, Object>> getPoints() {
-        return repository.findAllForMap().stream().map(row -> {
-            Map<String, Object> map = new HashMap<>();
-            map.put("id", row[0]);
-            map.put("titre", row[1]);
-            map.put("description", row[2]);
-            map.put("statut", row[3]);
-            map.put("latitude", row[4]);
-            map.put("longitude", row[5]);
-            return map;
-        }).toList();
+    @Operation(summary = "Récupérer tous les points de réparation", 
+               description = "Accessible à tous les utilisateurs authentifiés")
+    public ResponseEntity<List<PointReparationDTO>> getAllPoints() {
+        return ResponseEntity.ok(pointReparationService.getAllPoints());
+    }
+    
+    @GetMapping("/points/statut/{statut}")
+    @Operation(summary = "Filtrer les points par statut", 
+               description = "Statuts possibles: NOUVEAU, EN_COURS, TERMINE")
+    public ResponseEntity<List<PointReparationDTO>> getPointsByStatut(@PathVariable String statut) {
+        return ResponseEntity.ok(pointReparationService.getPointsByStatut(statut));
+    }
+    
+    @GetMapping("/points/{id}")
+    @Operation(summary = "Récupérer un point de réparation par son ID")
+    public ResponseEntity<PointReparationDTO> getPointById(@PathVariable Integer id) {
+        return ResponseEntity.ok(pointReparationService.getPointById(id));
+    }
+    
+    @PostMapping("/points")
+    @PreAuthorize("hasAnyRole('MANAGER', 'USER')")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Créer un nouveau point de réparation", 
+               description = "Réservé aux utilisateurs avec rôle USER ou MANAGER")
+    public ResponseEntity<PointReparationDTO> createPoint(@Valid @RequestBody CreatePointReparationRequest request) {
+        PointReparationDTO created = pointReparationService.createPoint(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+    
+    @PutMapping("/points/{id}")
+    @PreAuthorize("hasRole('MANAGER')")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Mettre à jour un point de réparation", 
+               description = "Réservé aux MANAGERS uniquement")
+    public ResponseEntity<PointReparationDTO> updatePoint(
+            @PathVariable Integer id,
+            @Valid @RequestBody UpdatePointReparationRequest request) {
+        return ResponseEntity.ok(pointReparationService.updatePoint(id, request));
+    }
+    
+    @DeleteMapping("/points/{id}")
+    @PreAuthorize("hasRole('MANAGER')")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Supprimer un point de réparation", 
+               description = "Réservé aux MANAGERS uniquement")
+    public ResponseEntity<Void> deletePoint(@PathVariable Integer id) {
+        pointReparationService.deletePoint(id);
+        return ResponseEntity.noContent().build();
     }
 }

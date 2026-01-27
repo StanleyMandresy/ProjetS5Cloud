@@ -6,9 +6,8 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
+import Manager from './pages/Manager';
 import { TravauxProvider } from "./context/TravauxContext";
-
-
 
 import './App.css';
 
@@ -36,10 +35,16 @@ const App: React.FC = () => {
               </ProtectedRoute>
             }
           />
-        
+          <Route
+            path="/manager"
+            element={
+              <ProtectedRoute>
+                <Manager />
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-        
         </TravauxProvider>
       </AuthProvider>
     </BrowserRouter>
