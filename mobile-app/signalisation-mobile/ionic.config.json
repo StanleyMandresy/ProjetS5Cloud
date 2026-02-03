@@ -1,0 +1,7 @@
+{
+  "name": "signalisation-mobile",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue-vite"
+}

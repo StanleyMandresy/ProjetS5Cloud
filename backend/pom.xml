@@ -15,7 +15,7 @@
     <groupId>com.example</groupId>
     <artifactId>vente-app</artifactId>
     <version>1.0.0</version>
-    <name>vente-app</name>
+    <name>Carte</name>
     <description>Application de vente avec Spring Boot</description>
     
     <properties>
@@ -57,6 +57,19 @@
             <version>${postgresql.version}</version>
         </dependency>
         
+        <!-- Hibernate Spatial pour PostGIS -->
+        <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-spatial</artifactId>
+        </dependency>
+        
+        <!-- JTS Core pour géométrie -->
+        <dependency>
+            <groupId>org.locationtech.jts</groupId>
+            <artifactId>jts-core</artifactId>
+            <version>1.19.0</version>
+        </dependency>
+        
         <!-- JWT -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
@@ -74,6 +87,13 @@
             <artifactId>jjwt-jackson</artifactId>
             <version>0.11.5</version>
             <scope>runtime</scope>
+        </dependency>
+        
+        <!-- Swagger/OpenAPI Documentation -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.2.0</version>
         </dependency>
         
         <!-- JSP Support -->
@@ -147,6 +167,7 @@
     </dependencies>
     
     <build>
+        <finalName>app</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
