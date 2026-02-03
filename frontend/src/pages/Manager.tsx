@@ -2,7 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTravaux } from '../context/TravauxContext';
 import { travauxService } from '../services/travaux.service';
-import type { CreateTravailRequest, UpdateTravailRequest, Statistiques } from '../types/travaux.types';
+import etapesService from '../services/etapes.service';
+import type { CreateTravailRequest, UpdateTravailRequest, Statistiques, StatistiquesTraitement } from '../types/travaux.types';
+import type { EtapeTravaux, CreateEtapeRequest } from '../types/etapes.types';
+import type { HistoriqueEtape } from '../types/historique.types';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import {
@@ -16,7 +19,9 @@ import {
   X,
   Save,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  Clock,
+  ListOrdered
 } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -32,6 +37,20 @@ const Manager: React.FC = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [filterStatut, setFilterStatut] = useState<string>('TOUS');
   const [statistiques, setStatistiques] = useState<Statistiques | null>(null);
+  const [statsTraitement, setStatsTraitement] = useState<StatistiquesTraitement | null>(null);
+  const [showEtapesModal, setShowEtapesModal] = useState(false);
+  const [etapes, setEtapes] = useState<EtapeTravaux[]>([]);
+  const [editingEtape, setEditingEtape] = useState<EtapeTravaux | null>(null);
+  const [newEtape, setNewEtape] = useState<CreateEtapeRequest>({
+    nom: '',
+    description: '',
+    pourcentageAvancement: 0,
+    ordre: 1,
+    couleur: '#6366F1'
+  });
+  const [showHistoriqueModal, setShowHistoriqueModal] = useState(false);
+  const [historiquePoint, setHistoriquePoint] = useState<HistoriqueEtape[]>([]);
+  const [selectedPointId, setSelectedPointId] = useState<number | null>(null);
   
   const [formData, setFormData] = useState<CreateTravailRequest>({
     titre: '',
@@ -45,7 +64,100 @@ const Manager: React.FC = () => {
 
   useEffect(() => {
     loadStatistiques();
+    loadStatistiquesTraitement();
   }, [travaux]);
+
+  const loadStatistiques = async () => {
+    try {
+      const stats = await travauxService.getStatistiques();
+      setStatistiques(stats);
+    } catch (error) {
+      console.error('Erreur chargement statistiques:', error);
+    }
+  };
+
+  const loadStatistiquesTraitement = async () => {
+    try {
+      const stats = await travauxService.getStatistiquesTraitement();
+      setStatsTraitement(stats);
+    } catch (error) {
+      console.error('Erreur chargement statistiques traitement:', error);
+    }
+  };
+
+  const loadEtapes = async () => {
+    try {
+      const data = await etapesService.getAll();
+      setEtapes(data);
+    } catch (error) {
+      console.error('Erreur chargement étapes:', error);
+    }
+  };
+
+  const handleCreateEtape = async () => {
+    try {
+      await etapesService.create(newEtape);
+      setNewEtape({ nom: '', description: '', pourcentageAvancement: 0, ordre: 1, couleur: '#6366F1' });
+      loadEtapes();
+      alert('Étape créée avec succès');
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Erreur lors de la création de l\'étape');
+    }
+  };
+
+  const handleUpdateEtape = async (id: number, data: Partial<CreateEtapeRequest>) => {
+    try {
+      await etapesService.update(id, data);
+      setEditingEtape(null);
+      loadEtapes();
+      alert('Étape modifiée avec succès');
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Erreur lors de la modification de l\'étape');
+    }
+  };
+
+  const handleDeleteEtape = async (id: number) => {
+    if (!confirm('Voulez-vous vraiment supprimer cette étape ?')) return;
+    try {
+      await etapesService.delete(id);
+      loadEtapes();
+      alert('Étape supprimée avec succès');
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Erreur lors de la suppression de l\'étape');
+    }
+  };
+
+  useEffect(() => {
+    if (showEtapesModal) {
+      loadEtapes();
+    }
+  }, [showEtapesModal]);
+
+  const handleShowHistorique = async (pointId: number) => {
+    try {
+      const historique = await travauxService.getHistorique(pointId);
+      setHistoriquePoint(historique);
+      setSelectedPointId(pointId);
+      setShowHistoriqueModal(true);
+    } catch (error) {
+      console.error('Erreur chargement historique:', error);
+      alert('Erreur lors du chargement de l\'historique');
+    }
+  };
+
+  const handleQuickStatusChange = async (pointId: number, newStatut: string) => {
+    if (!confirm(`Changer le statut vers "${newStatut}" ?`)) return;
+    try {
+      await travauxService.update(pointId, { statut: newStatut });
+      await refresh();
+      loadStatistiques();
+      loadStatistiquesTraitement();
+      alert('Statut mis à jour avec succès');
+    } catch (error) {
+      console.error('Erreur changement statut:', error);
+      alert('Erreur lors du changement de statut');
+    }
+  };
 
   useEffect(() => {
     if (showCreateForm) {
@@ -101,15 +213,6 @@ const Manager: React.FC = () => {
         }));
       });
     }, 100);
-  };
-
-  const loadStatistiques = async () => {
-    try {
-      const stats = await travauxService.getStatistiques();
-      setStatistiques(stats);
-    } catch (error) {
-      console.error('Erreur chargement statistiques:', error);
-    }
   };
 
   if (user?.role !== 'MANAGER') {
@@ -245,9 +348,18 @@ const Manager: React.FC = () => {
       {/* Main Content */}
       <main className="flex-1 lg:ml-72 p-4 md:p-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard Manager</h1>
-          <p className="text-gray-600">Gérez vos points de réparation et suivez les statistiques</p>
+        <div className="mb-8 flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard Manager</h1>
+            <p className="text-gray-600">Gérez vos points de réparation et suivez les statistiques</p>
+          </div>
+          <button
+            onClick={() => setShowEtapesModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-all shadow-lg"
+          >
+            <ListOrdered className="w-5 h-5" />
+            Gérer les Étapes
+          </button>
         </div>
 
         {/* Stats Grid */}
@@ -298,6 +410,64 @@ const Manager: React.FC = () => {
             <h3 className="text-sm font-semibold text-gray-600 mb-1">Budget Total</h3>
             <p className="text-3xl font-bold text-gray-900">{statistiques?.budgetTotal?.toLocaleString() || 0}</p>
             <p className="text-sm text-gray-500 mt-1">Ar</p>
+          </div>
+        </div>
+
+        {/* Tableau des statistiques de traitement */}
+        <div className="bg-white rounded-2xl p-6 shadow-lg border border-itu-gray/30 mb-8">
+          <div className="flex items-center mb-6">
+            <Clock className="w-6 h-6 text-itu-accent mr-2" />
+            <h2 className="text-2xl font-bold text-gray-900">Statistiques de Traitement Moyen</h2>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200">
+              <h3 className="text-sm font-semibold text-blue-900 mb-2">Temps de Traitement Total</h3>
+              <p className="text-4xl font-bold text-blue-700 mb-1">
+                {statsTraitement?.tempsTraitementMoyenJours?.toFixed(1) || 0}
+              </p>
+              <p className="text-sm text-blue-600">jours (signalement → fin)</p>
+              <div className="mt-3 text-xs text-blue-700">
+                NOUVEAU (0%) → TERMINE (100%)
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-6 border border-orange-200">
+              <h3 className="text-sm font-semibold text-orange-900 mb-2">Temps d'Attente</h3>
+              <p className="text-4xl font-bold text-orange-700 mb-1">
+                {statsTraitement?.tempsAttenteMoyenJours?.toFixed(1) || 0}
+              </p>
+              <p className="text-sm text-orange-600">jours (avant début)</p>
+              <div className="mt-3 text-xs text-orange-700">
+                NOUVEAU (0%) → EN_COURS (50%)
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border border-green-200">
+              <h3 className="text-sm font-semibold text-green-900 mb-2">Temps d'Exécution</h3>
+              <p className="text-4xl font-bold text-green-700 mb-1">
+                {statsTraitement?.tempsExecutionMoyenJours?.toFixed(1) || 0}
+              </p>
+              <p className="text-sm text-green-600">jours (début → fin)</p>
+              <div className="mt-3 text-xs text-green-700">
+                EN_COURS (50%) → TERMINE (100%)
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 grid grid-cols-3 gap-4 pt-6 border-t border-gray-200">
+            <div className="text-center">
+              <p className="text-sm text-gray-600 mb-1">Travaux en Attente</p>
+              <p className="text-2xl font-bold text-gray-800">{statsTraitement?.nombreTravauxEnAttente || 0}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-gray-600 mb-1">Travaux en Cours</p>
+              <p className="text-2xl font-bold text-blue-600">{statsTraitement?.nombreTravauxEnCours || 0}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-gray-600 mb-1">Travaux Terminés</p>
+              <p className="text-2xl font-bold text-green-600">{statsTraitement?.nombreTravauxTermines || 0}</p>
+            </div>
           </div>
         </div>
 
@@ -575,6 +745,33 @@ const Manager: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex gap-2 ml-4">
+                    {/* Menu déroulant pour changer le statut */}
+                    <select
+                      value={travail.statut}
+                      onChange={(e) => handleQuickStatusChange(travail.id, e.target.value)}
+                      className="px-3 py-2 border-2 border-gray-300 rounded-lg font-semibold text-sm hover:border-itu-accent transition-all cursor-pointer"
+                    >
+                      {etapes.length > 0 ? (
+                        etapes.map(etape => (
+                          <option key={etape.idEtape} value={etape.nom}>
+                            {etape.nom} ({etape.pourcentageAvancement}%)
+                          </option>
+                        ))
+                      ) : (
+                        <>
+                          <option value="NOUVEAU">NOUVEAU (0%)</option>
+                          <option value="EN_COURS">EN_COURS (50%)</option>
+                          <option value="TERMINE">TERMINE (100%)</option>
+                        </>
+                      )}
+                    </select>
+                    <button
+                      onClick={() => handleShowHistorique(travail.id)}
+                      className="p-2 bg-purple-100 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white transition-all"
+                      title="Voir l'historique"
+                    >
+                      <Clock className="w-5 h-5" />
+                    </button>
                     <button
                       onClick={() => startEdit(travail)}
                       className="p-2 bg-itu-accent/10 text-itu-accent rounded-lg hover:bg-itu-accent hover:text-white transition-all"
@@ -594,6 +791,329 @@ const Manager: React.FC = () => {
           </div>
         </div>
       </main>
+
+      {/* Modal Gestion des Étapes */}
+      {showEtapesModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-900">Gestion des Étapes du Workflow</h2>
+              <button
+                onClick={() => {
+                  setShowEtapesModal(false);
+                  setEditingEtape(null);
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              {/* Formulaire de création d'étape */}
+              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-6 mb-6 border border-purple-200">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">➕ Créer une nouvelle étape</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Nom de l'étape *</label>
+                    <input
+                      type="text"
+                      value={newEtape.nom}
+                      onChange={(e) => setNewEtape({ ...newEtape, nom: e.target.value })}
+                      placeholder="Ex: EN_VALIDATION"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                    <input
+                      type="text"
+                      value={newEtape.description}
+                      onChange={(e) => setNewEtape({ ...newEtape, description: e.target.value })}
+                      placeholder="Ex: En attente de validation"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Pourcentage d'avancement (%) *
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={newEtape.pourcentageAvancement}
+                      onChange={(e) => setNewEtape({ ...newEtape, pourcentageAvancement: parseInt(e.target.value) || 0 })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Ordre *</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={newEtape.ordre}
+                      onChange={(e) => setNewEtape({ ...newEtape, ordre: parseInt(e.target.value) || 1 })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Couleur</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="color"
+                        value={newEtape.couleur}
+                        onChange={(e) => setNewEtape({ ...newEtape, couleur: e.target.value })}
+                        className="w-16 h-10 rounded-lg border border-gray-300 cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={newEtape.couleur}
+                        onChange={(e) => setNewEtape({ ...newEtape, couleur: e.target.value })}
+                        placeholder="#6366F1"
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-end">
+                    <button
+                      onClick={handleCreateEtape}
+                      className="w-full px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all font-semibold"
+                    >
+                      Créer l'étape
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Liste des étapes */}
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 mb-4">📋 Étapes existantes</h3>
+                <div className="space-y-3">
+                  {etapes.map((etape) => (
+                    <div
+                      key={etape.idEtape}
+                      className="bg-white border-2 border-gray-200 rounded-xl p-4 hover:shadow-lg transition-all"
+                      style={{ borderLeftWidth: '6px', borderLeftColor: etape.couleur || '#6366F1' }}
+                    >
+                      {editingEtape?.idEtape === etape.idEtape ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">Nom</label>
+                            <input
+                              type="text"
+                              value={editingEtape.nom}
+                              onChange={(e) => setEditingEtape({ ...editingEtape, nom: e.target.value })}
+                              disabled={etape.estSysteme}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg disabled:bg-gray-100"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">Description</label>
+                            <input
+                              type="text"
+                              value={editingEtape.description || ''}
+                              onChange={(e) => setEditingEtape({ ...editingEtape, description: e.target.value })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">Pourcentage</label>
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={editingEtape.pourcentageAvancement}
+                              onChange={(e) => setEditingEtape({ ...editingEtape, pourcentageAvancement: parseInt(e.target.value) })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">Ordre</label>
+                            <input
+                              type="number"
+                              min="1"
+                              value={editingEtape.ordre}
+                              onChange={(e) => setEditingEtape({ ...editingEtape, ordre: parseInt(e.target.value) })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">Couleur</label>
+                            <input
+                              type="color"
+                              value={editingEtape.couleur || '#6366F1'}
+                              onChange={(e) => setEditingEtape({ ...editingEtape, couleur: e.target.value })}
+                              className="w-16 h-10 rounded-lg border border-gray-300 cursor-pointer"
+                            />
+                          </div>
+                          <div className="flex gap-2 items-end">
+                            <button
+                              onClick={() => handleUpdateEtape(etape.idEtape, editingEtape)}
+                              className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"
+                            >
+                              <Save className="w-4 h-4 inline mr-1" />
+                              Sauvegarder
+                            </button>
+                            <button
+                              onClick={() => setEditingEtape(null)}
+                              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all"
+                            >
+                              Annuler
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex justify-between items-center">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-700 font-bold text-sm">
+                                {etape.ordre}
+                              </span>
+                              <h4 className="text-lg font-bold text-gray-900">{etape.nom}</h4>
+                              {etape.estSysteme && (
+                                <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">
+                                  Système
+                                </span>
+                              )}
+                              <span className="px-3 py-1 rounded-full text-sm font-bold text-white" style={{ backgroundColor: etape.couleur }}>
+                                {etape.pourcentageAvancement}%
+                              </span>
+                            </div>
+                            {etape.description && (
+                              <p className="text-gray-600 ml-11">{etape.description}</p>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setEditingEtape(etape)}
+                              className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-all"
+                            >
+                              <Edit className="w-5 h-5" />
+                            </button>
+                            {!etape.estSysteme && (
+                              <button
+                                onClick={() => handleDeleteEtape(etape.idEtape)}
+                                className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-all"
+                              >
+                                <Trash2 className="w-5 h-5" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Historique des Étapes */}
+      {showHistoriqueModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-900">📜 Historique des Étapes</h2>
+              <button
+                onClick={() => {
+                  setShowHistoriqueModal(false);
+                  setHistoriquePoint([]);
+                  setSelectedPointId(null);
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              {historiquePoint.length === 0 ? (
+                <div className="text-center py-12">
+                  <Clock className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500">Aucun historique disponible</p>
+                </div>
+              ) : (
+                <div className="relative">
+                  {/* Timeline verticale */}
+                  <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-500 via-purple-500 to-green-500"></div>
+                  
+                  <div className="space-y-6">
+                    {historiquePoint.map((h, index) => (
+                      <div key={h.idHistorique} className="relative pl-20">
+                        {/* Point de la timeline */}
+                        <div className="absolute left-6 top-1 w-5 h-5 bg-white border-4 border-purple-500 rounded-full z-10"></div>
+                        
+                        {/* Carte de l'étape */}
+                        <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl p-5 shadow-md border-2 border-gray-200 hover:shadow-xl transition-all">
+                          <div className="flex justify-between items-start mb-3">
+                            <div>
+                              {h.etapePrecedente && (
+                                <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+                                  <span className="px-3 py-1 bg-gray-100 rounded-full">{h.etapePrecedente}</span>
+                                  <span>→</span>
+                                  <span className="px-3 py-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full font-bold">
+                                    {h.etapeActuelle}
+                                  </span>
+                                </div>
+                              )}
+                              {!h.etapePrecedente && (
+                                <div className="flex items-center gap-2 text-sm mb-2">
+                                  <span className="px-3 py-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full font-bold">
+                                    {h.etapeActuelle}
+                                  </span>
+                                  <span className="text-gray-500">(État initial)</span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <Clock className="w-4 h-4" />
+                                <span className="text-sm font-semibold">
+                                  {new Date(h.dateTransition).toLocaleDateString('fr-FR', {
+                                    day: '2-digit',
+                                    month: 'short',
+                                    year: 'numeric'
+                                  })}
+                                </span>
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">
+                                {new Date(h.dateTransition).toLocaleTimeString('fr-FR', {
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {h.commentaire && (
+                            <p className="text-gray-600 text-sm mt-2 pl-4 border-l-2 border-purple-300">
+                              {h.commentaire}
+                            </p>
+                          )}
+                          
+                          {index === 0 && (
+                            <div className="mt-3 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
+                              <p className="text-xs text-green-700 font-semibold">✓ État actuel</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

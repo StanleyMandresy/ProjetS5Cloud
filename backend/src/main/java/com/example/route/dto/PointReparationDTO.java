@@ -8,6 +8,8 @@ public class PointReparationDTO {
     private String titre;
     private String description;
     private LocalDate dateSignalement;
+    private LocalDate dateDebutTravaux;
+    private LocalDate dateFinTravaux;
     private String statut;
     private Float surfaceM2;
     private BigDecimal budget;
@@ -18,13 +20,16 @@ public class PointReparationDTO {
     
     // Constructeur complet
     public PointReparationDTO(Integer id, String titre, String description, 
-                             LocalDate dateSignalement, String statut, Float surfaceM2, 
+                             LocalDate dateSignalement, LocalDate dateDebutTravaux, 
+                             LocalDate dateFinTravaux, String statut, Float surfaceM2, 
                              BigDecimal budget, Double latitude, Double longitude,
                              String entrepriseNom, String utilisateurNom) {
         this.id = id;
         this.titre = titre;
         this.description = description;
         this.dateSignalement = dateSignalement;
+        this.dateDebutTravaux = dateDebutTravaux;
+        this.dateFinTravaux = dateFinTravaux;
         this.statut = statut;
         this.surfaceM2 = surfaceM2;
         this.budget = budget;
@@ -68,6 +73,22 @@ public class PointReparationDTO {
     
     public void setDateSignalement(LocalDate dateSignalement) {
         this.dateSignalement = dateSignalement;
+    }
+    
+    public LocalDate getDateDebutTravaux() {
+        return dateDebutTravaux;
+    }
+    
+    public void setDateDebutTravaux(LocalDate dateDebutTravaux) {
+        this.dateDebutTravaux = dateDebutTravaux;
+    }
+    
+    public LocalDate getDateFinTravaux() {
+        return dateFinTravaux;
+    }
+    
+    public void setDateFinTravaux(LocalDate dateFinTravaux) {
+        this.dateFinTravaux = dateFinTravaux;
     }
     
     public String getStatut() {

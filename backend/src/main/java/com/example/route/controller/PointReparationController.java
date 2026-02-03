@@ -1,8 +1,10 @@
 package com.example.route.controller;
 
 import com.example.route.dto.CreatePointReparationRequest;
+import com.example.route.dto.HistoriqueEtapeDTO;
 import com.example.route.dto.PointReparationDTO;
 import com.example.route.dto.StatistiquesDTO;
+import com.example.route.dto.StatistiquesTraitementDTO;
 import com.example.route.dto.UpdatePointReparationRequest;
 import com.example.route.service.PointReparationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -40,6 +42,13 @@ public class PointReparationController {
                description = "Retourne nombre de points, surface totale, avancement et budget total")
     public ResponseEntity<StatistiquesDTO> getStatistiques() {
         return ResponseEntity.ok(pointReparationService.getStatistiques());
+    }
+    
+    @GetMapping("/statistiques/traitement")
+    @Operation(summary = "Récupérer les statistiques de traitement", 
+               description = "Retourne les temps moyens de traitement, d'attente et d'exécution des travaux")
+    public ResponseEntity<StatistiquesTraitementDTO> getStatistiquesTraitement() {
+        return ResponseEntity.ok(pointReparationService.getStatistiquesTraitement());
     }
     
     @GetMapping("/points/statut/{statut}")
@@ -84,5 +93,11 @@ public class PointReparationController {
     public ResponseEntity<Void> deletePoint(@PathVariable Integer id) {
         pointReparationService.deletePoint(id);
         return ResponseEntity.noContent().build();
+    }
+    
+    @GetMapping("/points/{id}/historique")
+    @Operation(summary = "Récupérer l'historique des étapes d'un point de réparation")
+    public ResponseEntity<List<HistoriqueEtapeDTO>> getHistoriqueByPoint(@PathVariable Integer id) {
+        return ResponseEntity.ok(pointReparationService.getHistoriqueByPoint(id));
     }
 }
