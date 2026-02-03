@@ -1,0 +1,77 @@
+/* For information on how to create your own theme, please refer to:
+http://ionicframework.com/docs/theming/ */
+
+:root {
+  /* Couleurs principales - Bleu Ciel */
+  --ion-color-primary: #00B4D8;
+  --ion-color-primary-rgb: 0, 180, 216;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #0099B8;
+  --ion-color-primary-tint: #1FC5E5;
+
+  /* Secondary - Cyan */
+  --ion-color-secondary: #00D9FF;
+  --ion-color-secondary-rgb: 0, 217, 255;
+  --ion-color-secondary-contrast: #000000;
+  --ion-color-secondary-contrast-rgb: 0, 0, 0;
+  --ion-color-secondary-shade: #00bfe0;
+  --ion-color-secondary-tint: #1addff;
+
+  /* Tertiary - Violet foncé */
+  --ion-color-tertiary: #1a1a2e;
+  --ion-color-tertiary-rgb: 26, 26, 46;
+  --ion-color-tertiary-contrast: #ffffff;
+  --ion-color-tertiary-contrast-rgb: 255, 255, 255;
+  --ion-color-tertiary-shade: #171728;
+  --ion-color-tertiary-tint: #313143;
+
+  /* Success - Vert moderne */
+  --ion-color-success: #10B981;
+  --ion-color-success-rgb: 16, 185, 129;
+  --ion-color-success-contrast: #ffffff;
+  --ion-color-success-contrast-rgb: 255, 255, 255;
+  --ion-color-success-shade: #0ea372;
+  --ion-color-success-tint: #28c08e;
+
+  /* Warning - Bleu Ciel Clair */
+  --ion-color-warning: #0096C7;
+  --ion-color-warning-rgb: 0, 150, 199;
+  --ion-color-warning-contrast: #ffffff;
+  --ion-color-warning-contrast-rgb: 255, 255, 255;
+  --ion-color-warning-shade: #0081A8;
+  --ion-color-warning-tint: #1FA7D1;
+
+  /* Danger - Rouge corail */
+  --ion-color-danger: #EF4444;
+  --ion-color-danger-rgb: 239, 68, 68;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-contrast-rgb: 255, 255, 255;
+  --ion-color-danger-shade: #d23c3c;
+  --ion-color-danger-tint: #f15757;
+
+  /* Couleurs neutres */
+  --ion-color-dark: #1a1a2e;
+  --ion-color-dark-rgb: 26, 26, 46;
+  --ion-color-dark-contrast: #ffffff;
+  --ion-color-dark-contrast-rgb: 255, 255, 255;
+  --ion-color-dark-shade: #171728;
+  --ion-color-dark-tint: #313143;
+
+  --ion-color-medium: #6B7280;
+  --ion-color-medium-rgb: 107, 114, 128;
+  --ion-color-medium-contrast: #ffffff;
+  --ion-color-medium-contrast-rgb: 255, 255, 255;
+  --ion-color-medium-shade: #5e6471;
+  --ion-color-medium-tint: #7a808d;
+
+  --ion-color-light: #F3F4F6;
+  --ion-color-light-rgb: 243, 244, 246;
+  --ion-color-light-contrast: #000000;
+  --ion-color-light-contrast-rgb: 0, 0, 0;
+  --ion-color-light-shade: #d6d7d8;
+  --ion-color-light-tint: #f4f5f7;
+
+  /* Fonts */
+  --ion-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
