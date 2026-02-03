@@ -1,5 +1,6 @@
 import api from "./api";
-import type { Travail, CreateTravailRequest, UpdateTravailRequest, Statistiques } from "../types/travaux.types";
+import type { Travail, CreateTravailRequest, UpdateTravailRequest, Statistiques, StatistiquesTraitement } from "../types/travaux.types";
+import type { HistoriqueEtape } from "../types/historique.types";
 
 export const travauxService = {
   // Récupérer tous les points pour la carte
@@ -11,6 +12,12 @@ export const travauxService = {
   // Récupérer les statistiques globales
   async getStatistiques(): Promise<Statistiques> {
     const response = await api.get<Statistiques>("/travaux/statistiques");
+    return response.data;
+  },
+  
+  // Récupérer les statistiques de traitement
+  async getStatistiquesTraitement(): Promise<StatistiquesTraitement> {
+    const response = await api.get<StatistiquesTraitement>("/travaux/statistiques/traitement");
     return response.data;
   },
 
@@ -41,5 +48,11 @@ export const travauxService = {
   // Supprimer un point (MANAGER uniquement)
   async delete(id: number): Promise<void> {
     await api.delete(`/travaux/points/${id}`);
+  },
+
+  // Récupérer l'historique des étapes d'un point
+  async getHistorique(id: number): Promise<HistoriqueEtape[]> {
+    const response = await api.get<HistoriqueEtape[]>(`/travaux/points/${id}/historique`);
+    return response.data;
   },
 };
