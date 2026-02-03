@@ -1,13 +1,13 @@
+
+version: "3.8"
+
 services:
 
   postgres:
-    build:
-      context: ./docker/postgres
-      dockerfile: Dockerfile
-    image: projets5cloud-postgres:latest
+    image: postgis/postgis:15-3.4
     container_name: postgres_postgis
     ports:
-      - "5433:5432"
+      - "5432:5432"
     environment:
       POSTGRES_DB: projet-cloud-db
       POSTGRES_USER: admin
@@ -29,7 +29,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DB_HOST: postgres_postgis
+      DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: projet-cloud-db
       DB_USER: admin
@@ -46,10 +46,10 @@ services:
       - backend
 
   tileserver:
-    image: maptiler/tileserver-gl
+    image: klokantech/tileserver-gl
     container_name: tileserver
     ports:
-      - "8000:8080"
+      - "8000:80"
     volumes:
       - ./docker/tileserver/data:/data
 

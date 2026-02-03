@@ -5,6 +5,9 @@ import { travauxService } from '../services/travaux.service';
 import type { CreateTravailRequest, UpdateTravailRequest, Statistiques } from '../types/travaux.types';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
+import { useSignalements } from '../context/SignalementContext';
+
+
 import {
   Plus,
   Edit,
@@ -381,6 +384,13 @@ const Manager: React.FC = () => {
                 >
                   <X className="w-6 h-6 text-white" />
                 </button>
+                  <button
+                    onClick={syncSignalements}
+                    disabled={loading}
+                    className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-semibold shadow-lg disabled:opacity-50"
+                  >
+                    {loading ? "Synchronisation..." : "Synchroniser les signalements"}
+                  </button>
               </div>
 
               <form

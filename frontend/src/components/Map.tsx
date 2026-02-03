@@ -1,54 +1,108 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useTravaux } from "../context/TravauxContext";
+import { useSignalements } from "../context/SignalementContext";
 
 const Map = () => {
-  const { travaux, loading } = useTravaux();
+  const { travaux, loading: loadingTravaux } = useTravaux();
+  const { signalements, loading: loadingSignalements, syncSignalements } = useSignalements();
+  const mapRef = useRef<L.Map | null>(null);
 
-  // Fonction pour obtenir la couleur selon le statut
   const getColorByStatus = (statut: string): string => {
     switch (statut) {
-      case 'NOUVEAU':
-        return '#ef4444'; // Rouge
-      case 'EN_COURS':
-        return '#f59e0b'; // Orange
-      case 'TERMINE':
-        return '#22c55e'; // Vert
-      default:
-        return '#6b7280'; // Gris
+      case "NOUVEAU": return "#ef4444";
+      case "EN_COURS": return "#f59e0b";
+      case "TERMINE":
+      case "RESOLU": return "#22c55e";
+      default: return "#6b7280";
     }
   };
 
-  // Fonction pour obtenir le texte du statut en français
   const getStatusText = (statut: string): string => {
     switch (statut) {
-      case 'NOUVEAU':
-        return 'Nouveau';
-      case 'EN_COURS':
-        return 'En cours';
-      case 'TERMINE':
-        return 'Terminé';
-      default:
-        return statut;
+      case "NOUVEAU": return "Nouveau";
+      case "EN_COURS": return "En cours";
+      case "TERMINE":
+      case "RESOLU": return "Terminé";
+      default: return statut;
     }
   };
 
+  // Initialisation de la map une seule fois
   useEffect(() => {
-    if (loading) return;
+    if (!mapRef.current) {
+      const map = L.map("map").setView([-18.8792, 47.5079], 13);
+      mapRef.current = map;
 
-    const map = L.map("map").setView([-18.8792, 47.5079], 13);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap contributors",
+        maxZoom: 19,
+      }).addTo(map);
 
-    // Utilisation d'OpenStreetMap standard
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap contributors",
-      maxZoom: 19,
-    }).addTo(map);
+      // Ajout des markers travaux dès le départ
+      const createCustomIcon = (color: string) =>
+        L.divIcon({
+          className: "custom-marker",
+          html: `<div style="
+            background-color: ${color};
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+          "></div>`,
+          iconSize: [30, 30],
+          iconAnchor: [15, 15],
+          popupAnchor: [0, -15],
+        });
 
-    // Créer des icônes personnalisées pour chaque statut
-    const createCustomIcon = (color: string) => {
-      return L.divIcon({
-        className: 'custom-marker',
+      travaux.forEach((t) => {
+        if (!t.latitude || !t.longitude) return;
+        const color = getColorByStatus(t.statut);
+        const icon = createCustomIcon(color);
+        L.marker([t.latitude, t.longitude], { icon })
+          .addTo(map)
+          .bindPopup(`
+            <div style="min-width:200px;font-family:system-ui;">
+              <h3 style="margin:0 0 8px 0;font-size:16px;font-weight:bold;color:#1f2937;">
+                ${t.titre}
+              </h3>
+              <p style="margin:0 0 8px 0;color:#4b5563;font-size:13px;">
+                ${t.description || "Pas de description"}
+              </p>
+              <div style="background:#f3f4f6;padding:8px;border-radius:6px;">
+                <div style="display:flex;justify-content:space-between;">
+                  <span style="font-weight:600;color:#374151;">Statut:</span>
+                  <span style="
+                    background:${color};
+                    color:white;
+                    padding:2px 8px;
+                    border-radius:12px;
+                    font-size:12px;
+                    font-weight:500;
+                  ">${getStatusText(t.statut)}</span>
+                </div>
+              </div>
+            </div>
+          `);
+      });
+    }
+
+    return () => {
+      mapRef.current?.remove();
+      mapRef.current = null;
+    };
+  }, [travaux]);
+
+  // Ajouter les signalements après le clic sur le bouton
+  useEffect(() => {
+    if (!mapRef.current || loadingSignalements || signalements.length === 0) return;
+
+    const map = mapRef.current;
+    const createCustomIcon = (color: string) =>
+      L.divIcon({
+        className: "custom-marker",
         html: `<div style="
           background-color: ${color};
           width: 30px;
@@ -59,117 +113,52 @@ const Map = () => {
         "></div>`,
         iconSize: [30, 30],
         iconAnchor: [15, 15],
-        popupAnchor: [0, -15]
+        popupAnchor: [0, -15],
       });
-    };
 
-    travaux.forEach((t) => {
-      if (!t.latitude || !t.longitude) return;
-      
-      const color = getColorByStatus(t.statut);
+    signalements.forEach((s) => {
+      if (!s.latitude || !s.longitude) return;
+      const color = getColorByStatus(s.status);
       const icon = createCustomIcon(color);
-      
-      // Formater les informations pour le popup
-      const dateSignalement = t.dateSignalement 
-        ? new Date(t.dateSignalement).toLocaleDateString('fr-FR')
-        : 'N/A';
-      
-      const budget = t.budget 
-        ? `${parseFloat(t.budget).toLocaleString('fr-FR')} Ar`
-        : 'N/A';
-      
-      const surface = t.surfaceM2 
-        ? `${t.surfaceM2} m²`
-        : 'N/A';
-      
-      const entreprise = t.entrepriseNom || 'Non assignée';
-      
-      L.marker([t.latitude, t.longitude], { icon })
+      L.marker([s.latitude, s.longitude], { icon })
         .addTo(map)
         .bindPopup(`
-          <div style="min-width: 200px; font-family: system-ui;">
-            <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: bold; color: #1f2937;">
-              ${t.titre}
+          <div style="min-width:200px;font-family:system-ui;">
+            <h3 style="margin:0 0 8px 0;font-size:16px;font-weight:bold;color:#1f2937;">
+              Signalement
             </h3>
-            <p style="margin: 0 0 8px 0; color: #4b5563; font-size: 13px;">
-              ${t.description || 'Pas de description'}
+            <p style="margin:0 0 8px 0;color:#4b5563;font-size:13px;">
+              ${s.description || "Pas de description"}
             </p>
-            <div style="background: #f3f4f6; padding: 8px; border-radius: 6px; margin-bottom: 8px;">
-              <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                <span style="font-weight: 600; color: #374151;">Statut:</span>
+            <div style="background:#f3f4f6;padding:8px;border-radius:6px;">
+              <div style="display:flex;justify-content:space-between;">
+                <span style="font-weight:600;color:#374151;">Statut:</span>
                 <span style="
-                  background: ${color}; 
-                  color: white; 
-                  padding: 2px 8px; 
-                  border-radius: 12px;
-                  font-size: 12px;
-                  font-weight: 500;
-                ">${getStatusText(t.statut)}</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                <span style="font-weight: 600; color: #374151;">Date:</span>
-                <span style="color: #6b7280;">${dateSignalement}</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                <span style="font-weight: 600; color: #374151;">Surface:</span>
-                <span style="color: #6b7280;">${surface}</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                <span style="font-weight: 600; color: #374151;">Budget:</span>
-                <span style="color: #6b7280;">${budget}</span>
-              </div>
-              <div style="display: flex; justify-content: space-between;">
-                <span style="font-weight: 600; color: #374151;">Entreprise:</span>
-                <span style="color: #6b7280; font-size: 12px;">${entreprise}</span>
+                  background:${color};
+                  color:white;
+                  padding:2px 8px;
+                  border-radius:12px;
+                  font-size:12px;
+                  font-weight:500;
+                ">${getStatusText(s.status)}</span>
               </div>
             </div>
           </div>
         `);
     });
-
-    // Ajouter une légende
-    const legend = L.control({ position: 'bottomright' });
-    
-    legend.onAdd = function () {
-      const div = L.DomUtil.create('div', 'info legend');
-      div.style.cssText = `
-        background: white;
-        padding: 10px;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-      `;
-      
-      div.innerHTML = `
-        <h4 style="margin: 0 0 8px 0; font-size: 14px; font-weight: bold;">Légende</h4>
-        <div style="display: flex; align-items: center; margin-bottom: 4px;">
-          <div style="width: 20px; height: 20px; background: #ef4444; border-radius: 50%; margin-right: 8px;"></div>
-          <span style="font-size: 13px;">Nouveau</span>
-        </div>
-        <div style="display: flex; align-items: center; margin-bottom: 4px;">
-          <div style="width: 20px; height: 20px; background: #f59e0b; border-radius: 50%; margin-right: 8px;"></div>
-          <span style="font-size: 13px;">En cours</span>
-        </div>
-        <div style="display: flex; align-items: center;">
-          <div style="width: 20px; height: 20px; background: #22c55e; border-radius: 50%; margin-right: 8px;"></div>
-          <span style="font-size: 13px;">Terminé</span>
-        </div>
-      `;
-      
-      return div;
-    };
-    
-    legend.addTo(map);
-
-    return () => {
-      map.remove();
-    };
-  }, [travaux, loading]);
+  }, [signalements, loadingSignalements]);
 
   return (
-    <div
-      id="map"
-      className="w-full h-full rounded-3xl"
-    />
+    <div className="relative w-full h-full rounded-3xl">
+      <button
+        onClick={syncSignalements}
+        disabled={loadingSignalements}
+        className="absolute top-4 left-4 z-50 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-semibold shadow-lg disabled:opacity-50"
+      >
+        {loadingSignalements ? "Synchronisation..." : "Synchroniser les signalements"}
+      </button>
+      <div id="map" className="w-full h-full rounded-3xl" />
+    </div>
   );
 };
 
