@@ -55,4 +55,6 @@ export const travauxService = {
     const response = await api.get<HistoriqueEtape[]>(`/travaux/points/${id}/historique`);
     return response.data;
   },
+
 };
+

@@ -22,6 +22,12 @@ public class PointDeReparation {
     @Column(name = "date_signalement")
     private LocalDate dateSignalement;
     
+    @Column(name = "date_debut_travaux")
+    private LocalDate dateDebutTravaux;
+    
+    @Column(name = "date_fin_travaux")
+    private LocalDate dateFinTravaux;
+    
     @Column(nullable = false, length = 20)
     private String statut;
     
@@ -86,6 +92,22 @@ public class PointDeReparation {
     
     public void setDateSignalement(LocalDate dateSignalement) {
         this.dateSignalement = dateSignalement;
+    }
+    
+    public LocalDate getDateDebutTravaux() {
+        return dateDebutTravaux;
+    }
+    
+    public void setDateDebutTravaux(LocalDate dateDebutTravaux) {
+        this.dateDebutTravaux = dateDebutTravaux;
+    }
+    
+    public LocalDate getDateFinTravaux() {
+        return dateFinTravaux;
+    }
+    
+    public void setDateFinTravaux(LocalDate dateFinTravaux) {
+        this.dateFinTravaux = dateFinTravaux;
     }
     
     public String getStatut() {

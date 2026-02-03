@@ -35,6 +35,25 @@ CREATE TABLE entreprise (
 );
 
 -- =========================
+-- TABLE : etape_travaux
+-- =========================
+CREATE TABLE etape_travaux (
+    id_etape SERIAL PRIMARY KEY,
+    nom VARCHAR(50) UNIQUE NOT NULL,
+    description TEXT,
+    pourcentage_avancement INT NOT NULL,
+    ordre INT NOT NULL,
+    couleur VARCHAR(7),
+    est_systeme BOOLEAN DEFAULT FALSE
+);
+
+-- Insérer les étapes par défaut
+INSERT INTO etape_travaux (nom, description, pourcentage_avancement, ordre, couleur, est_systeme) VALUES
+('NOUVEAU', 'Travaux signalés, en attente de traitement', 0, 1, '#3B82F6', true),
+('EN_COURS', 'Travaux en cours d''exécution', 50, 2, '#F59E0B', true),
+('TERMINE', 'Travaux terminés', 100, 3, '#10B981', true);
+
+-- =========================
 -- TABLE : point_de_reparation
 -- =========================
 CREATE TABLE point_de_reparation (
@@ -43,6 +62,8 @@ CREATE TABLE point_de_reparation (
     description TEXT,
 
     date_signalement DATE DEFAULT CURRENT_DATE,
+    date_debut_travaux DATE,        -- Date de début (quand statut passe à EN_COURS)
+    date_fin_travaux DATE,           -- Date de fin (quand statut passe à TERMINE)
 
     statut VARCHAR(20) CHECK (statut IN ('NOUVEAU','EN_COURS','TERMINE')) NOT NULL,
 

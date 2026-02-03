@@ -6,6 +6,8 @@ export interface Travail {
   titre: string;
   description: string;
   dateSignalement?: string;
+  dateDebutTravaux?: string;
+  dateFinTravaux?: string;
   statut: "NOUVEAU" | "EN_COURS" | "TERMINE";
   surfaceM2?: number;
   budget?: string;
@@ -45,4 +47,13 @@ export interface Statistiques {
   pointsNouveau: number;
   pointsEnCours: number;
   pointsTermine: number;
+}
+
+export interface StatistiquesTraitement {
+  tempsTraitementMoyenJours: number;
+  tempsAttenteMoyenJours: number;
+  tempsExecutionMoyenJours: number;
+  nombreTravauxTermines: number;
+  nombreTravauxEnCours: number;
+  nombreTravauxEnAttente: number;
 }

@@ -1,6 +1,7 @@
 package com.example.route.dto;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 public class UpdatePointReparationRequest {
     private String titre;
@@ -11,6 +12,8 @@ public class UpdatePointReparationRequest {
     private Float surfaceM2;
     private BigDecimal budget;
     private Integer entrepriseId;
+    private LocalDate dateDebutTravaux;
+    private LocalDate dateFinTravaux;
     
     // Constructeurs
     public UpdatePointReparationRequest() {}
@@ -78,5 +81,21 @@ public class UpdatePointReparationRequest {
     
     public void setEntrepriseId(Integer entrepriseId) {
         this.entrepriseId = entrepriseId;
+    }
+    
+    public LocalDate getDateDebutTravaux() {
+        return dateDebutTravaux;
+    }
+    
+    public void setDateDebutTravaux(LocalDate dateDebutTravaux) {
+        this.dateDebutTravaux = dateDebutTravaux;
+    }
+    
+    public LocalDate getDateFinTravaux() {
+        return dateFinTravaux;
+    }
+    
+    public void setDateFinTravaux(LocalDate dateFinTravaux) {
+        this.dateFinTravaux = dateFinTravaux;
     }
 }
