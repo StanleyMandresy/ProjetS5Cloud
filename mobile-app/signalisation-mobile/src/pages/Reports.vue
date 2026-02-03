@@ -1,8 +1,8 @@
 <template>
   <ion-page>
     <ion-header>
-      <ion-toolbar>
-        <ion-title>Signalements</ion-title>
+      <ion-toolbar class="reports-toolbar">
+        <ion-title>📋 Mes Signalements</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -171,18 +171,22 @@ import {
   IonToggle
 } from '@ionic/vue'
 
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { reportService, type Report } from '@/services/report.service'
 import { auth } from '@/firebase/firebase'
+import type { Unsubscribe } from 'firebase/firestore'
 
 const router = useRouter()
 const reports = ref<Report[]>([])
 const selectedFilter = ref<'TOUS' | 'NOUVEAU' | 'EN_COURS' | 'RESOLU'>('TOUS')
-const showOnlyMyReports = ref(false)
+const showOnlyMyReports = ref(true) // 👤 Activé par défaut
 
 // ID utilisateur courant
 const currentUserId = auth.currentUser?.uid
+
+// 🔄 Référence pour le listener temps réel
+let unsubscribe: Unsubscribe | null = null
 
 // 📊 Calcul des statistiques
 const stats = computed(() => {
@@ -191,10 +195,19 @@ const stats = computed(() => {
     ? reports.value.filter(r => r.userId === auth.currentUser?.uid)
     : reports.value
 
+  // DEBUG: Afficher les statuts réels dans la console
+  console.log('📊 Stats debug - Statuts trouvés:', relevantReports.map(r => ({ id: r.id, status: r.status })))
+
   const total = relevantReports.length
-  const nouveau = relevantReports.filter(r => r.status === 'NOUVEAU').length
-  const enCours = relevantReports.filter(r => r.status === 'EN_COURS').length
-  const resolu = relevantReports.filter(r => r.status === 'RESOLU').length
+  
+  // Normaliser les comparaisons (remplacer espaces par underscores, majuscules)
+  const normalizeStatus = (status: string) => status?.toUpperCase().replace(/\s+/g, '_') || ''
+  
+  const nouveau = relevantReports.filter(r => normalizeStatus(r.status) === 'NOUVEAU').length
+  const enCours = relevantReports.filter(r => normalizeStatus(r.status) === 'EN_COURS').length
+  const resolu = relevantReports.filter(r => normalizeStatus(r.status) === 'RESOLU').length
+  
+  console.log('📊 Compteurs:', { total, nouveau, enCours, resolu })
   
   // Calcul du pourcentage d'avancement (résolu / total)
   const progressPercent = total > 0 ? Math.round((resolu / total) * 100) : 0
@@ -215,16 +228,33 @@ const filteredReports = computed(() => {
     ? reports.value.filter(r => r.userId === auth.currentUser?.uid)
     : reports.value
 
+  // Normaliser le statut (espaces → underscores, majuscules)
+  const normalizeStatus = (status: string) => status?.toUpperCase().replace(/\s+/g, '_') || ''
+
   // Puis filtrer par statut
   if (selectedFilter.value !== 'TOUS') {
-    result = result.filter(r => r.status === selectedFilter.value)
+    result = result.filter(r => normalizeStatus(r.status) === selectedFilter.value)
   }
 
   return result
 })
 
-onMounted(async () => {
-  reports.value = await reportService.getAllReports()
+onMounted(() => {
+  // 🔄 Écoute temps réel de TOUS les signalements
+  // Les statuts sont mis à jour automatiquement quand l'admin les modifie
+  // Les notifications sont envoyées uniquement pour MES signalements
+  unsubscribe = reportService.listenToAllReportsWithNotifications((updatedReports) => {
+    console.log('📋 Reports mis à jour en temps réel:', updatedReports.length)
+    reports.value = updatedReports
+  })
+})
+
+// 🧹 Nettoyer le listener quand on quitte la page
+onUnmounted(() => {
+  if (unsubscribe) {
+    unsubscribe()
+    console.log('🔌 Listener Reports déconnecté')
+  }
 })
 
 const openDetail = (report: Report) => {
@@ -240,15 +270,17 @@ const formatDate = (timestamp: any) => {
 }
 
 const formatStatus = (status: string) => {
-  switch (status) {
+  // Normaliser: majuscules + espaces → underscores
+  const normalizedStatus = status?.toUpperCase().replace(/\s+/g, '_')
+  switch (normalizedStatus) {
     case 'NOUVEAU':
-      return 'Nouveau'
+      return '🔴 Nouveau'
     case 'EN_COURS':
-      return 'En cours'
+      return '🟠 En cours'
     case 'RESOLU':
-      return 'Résolu'
+      return '🟢 Résolu'
     default:
-      return status
+      return status || 'Inconnu'
   }
 }
 </script>
@@ -262,14 +294,14 @@ const formatStatus = (status: string) => {
 
 .stat-item h3 {
   font-size: 14px;
-  color: #666;
+  color: rgba(255, 255, 255, 0.7);
   margin-bottom: 8px;
 }
 
 .stat-value {
   font-size: 32px;
-  font-weight: bold;
-  color: #3880ff;
+  font-weight: 700;
+  color: #00D9FF;
   margin: 0;
 }
 
@@ -285,33 +317,52 @@ const formatStatus = (status: string) => {
   padding: 16px;
   border-radius: 12px;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .stat-count {
   font-size: 24px;
-  font-weight: bold;
+  font-weight: 700;
   margin-bottom: 4px;
+  color: white;
 }
 
 .stat-label {
   font-size: 12px;
   opacity: 0.8;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .stat-nouveau {
-  background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
-  color: white;
+  background: rgba(255, 107, 53, 0.15);
+  border: 1px solid rgba(255, 107, 53, 0.3);
+  color: #FF6B35;
+}
+
+.stat-nouveau .stat-count {
+  color: #00B4D8;
 }
 
 .stat-encours {
-  background: linear-gradient(135deg, #ffa726 0%, #ff9800 100%);
-  color: white;
+  background: rgba(247, 147, 30, 0.15);
+  border: 1px solid rgba(247, 147, 30, 0.3);
+  color: #F7931E;
+}
+
+.stat-encours .stat-count {
+  color: #0096C7;
 }
 
 .stat-resolu {
-  background: linear-gradient(135deg, #66bb6a 0%, #4caf50 100%);
-  color: white;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10B981;
+}
+
+.stat-resolu .stat-count {
+  color: #10B981;
 }
 
 /* 🔍 Filtres */
@@ -322,18 +373,23 @@ const formatStatus = (status: string) => {
 .my-reports-toggle {
   margin-bottom: 16px;
   padding-bottom: 12px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .my-reports-toggle ion-item {
   --padding-start: 0;
   --inner-padding-end: 0;
+  --background: transparent;
+  --color: white;
 }
 
 .filter-label {
-  font-weight: bold;
+  font-weight: 600;
   margin-bottom: 12px;
-  color: #333;
+  color: rgba(255, 255, 255, 0.8);
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.5px;
 }
 
 .filter-buttons {
@@ -346,6 +402,7 @@ const formatStatus = (status: string) => {
   flex: 1;
   min-width: 120px;
   font-size: 11px;
+  --color: rgba(255, 255, 255, 0.8);
 }
 
 /* Barre de progression */
@@ -358,32 +415,33 @@ const formatStatus = (status: string) => {
   justify-content: space-between;
   margin-bottom: 8px;
   font-size: 14px;
-  color: #666;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .progress-percent {
-  font-weight: bold;
-  color: #4caf50;
+  font-weight: 700;
+  color: #10B981;
 }
 
 .progress-bar {
   width: 100%;
   height: 24px;
-  background: #e0e0e0;
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #4caf50 0%, #66bb6a 100%);
+  background: linear-gradient(90deg, #10B981 0%, #34D399 100%);
   transition: width 0.5s ease;
   display: flex;
   align-items: center;
   justify-content: flex-end;
   padding-right: 8px;
   color: white;
-  font-weight: bold;
+  font-weight: 700;
 }
 
 /* 📋 Liste des signalements améliorée */
@@ -398,7 +456,7 @@ const formatStatus = (status: string) => {
 .reports-header h3 {
   font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: rgba(255, 255, 255, 0.8);
   margin: 0;
 }
 
@@ -410,62 +468,67 @@ const formatStatus = (status: string) => {
 
 /* Carte de signalement */
 .report-card {
-  background: white;
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 16px;
   padding: 16px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
-  border-left: 4px solid #ccc;
+  border-left: 4px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
 }
 
 .report-card:active {
   transform: scale(0.98);
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .report-nouveau {
-  border-left-color: #ff5252;
-  background: linear-gradient(135deg, #ffffff 0%, #fff5f5 100%);
+  border-left-color: #FF6B35;
+  background: rgba(255, 107, 53, 0.08);
 }
 
 .report-en_cours {
-  border-left-color: #ff9800;
-  background: linear-gradient(135deg, #ffffff 0%, #fff9f0 100%);
+  border-left-color: #F7931E;
+  background: rgba(247, 147, 30, 0.08);
 }
 
 .report-resolu {
-  border-left-color: #4caf50;
-  background: linear-gradient(135deg, #ffffff 0%, #f5fff5 100%);
+  border-left-color: #10B981;
+  background: rgba(16, 185, 129, 0.08);
 }
 
 /* Badge de statut */
 .report-status-badge {
   display: inline-block;
-  padding: 4px 12px;
-  border-radius: 20px;
+  padding: 6px 12px;
+  border-radius: 8px;
   font-size: 11px;
-  font-weight: bold;
+  font-weight: 700;
   margin-bottom: 12px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .badge-nouveau {
-  background: #ff5252;
-  color: white;
+  background: rgba(255, 107, 53, 0.2);
+  color: #FF9999;
+  border: 1px solid rgba(255, 107, 53, 0.3);
 }
 
 .badge-en_cours {
-  background: #ff9800;
-  color: white;
+  background: rgba(247, 147, 30, 0.2);
+  color: #FFD699;
+  border: 1px solid rgba(247, 147, 30, 0.3);
 }
 
 .badge-resolu {
-  background: #4caf50;
-  color: white;
+  background: rgba(16, 185, 129, 0.2);
+  color: #9EECD9;
+  border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
 /* Contenu de la carte */
@@ -476,7 +539,7 @@ const formatStatus = (status: string) => {
 .report-title {
   font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: white;
   margin: 0 0 12px 0;
   line-height: 1.4;
 }
@@ -492,7 +555,7 @@ const formatStatus = (status: string) => {
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  color: #666;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .meta-icon {
@@ -506,7 +569,7 @@ const formatStatus = (status: string) => {
 }
 
 .owner-badge {
-  color: #4caf50;
+  color: #10B981;
   font-weight: 600;
 }
 
@@ -517,19 +580,20 @@ const formatStatus = (status: string) => {
   top: 50%;
   transform: translateY(-50%);
   font-size: 20px;
-  color: #ccc;
+  color: rgba(255, 255, 255, 0.3);
   transition: all 0.3s ease;
 }
 
 .report-card:active .report-arrow {
   transform: translateY(-50%) translateX(4px);
+  color: rgba(255, 255, 255, 0.6);
 }
 
 /* État vide */
 .empty-state {
   text-align: center;
   padding: 60px 20px;
-  color: #999;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .empty-icon {
@@ -559,6 +623,12 @@ const formatStatus = (status: string) => {
 
 /* Background de la page */
 ion-content {
-  --background: #f5f5f5;
+  --background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+}
+
+/* Toolbar personnalisée */
+.reports-toolbar {
+  --background: linear-gradient(135deg, #00B4D8 0%, #0096C7 100%);
+  --color: white;
 }
 </style>

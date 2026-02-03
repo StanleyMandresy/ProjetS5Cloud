@@ -1,0 +1,11 @@
+commande utile pour nouvelle fonctionnalité
+
+npm run build
+
+synchronisation avec android
+
+npx.cmd cap sync android
+
+ouverture de android studio
+
+npx.cmd cap open android

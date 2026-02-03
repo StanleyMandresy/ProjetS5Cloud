@@ -1,8 +1,8 @@
 <template>
   <ion-page>
     <ion-header>
-      <ion-toolbar>
-        <ion-title>Carte</ion-title>
+      <ion-toolbar class="map-toolbar">
+        <ion-title>🗺️ Carte Interactive</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -21,22 +21,22 @@
 
       <!-- Bouton Me localiser -->
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button @click="locateMe">
+        <ion-fab-button @click="locateMe" class="locate-btn">
           📍
         </ion-fab-button>
       </ion-fab>
 
       <!-- Bouton Rafraîchir -->
       <ion-fab vertical="bottom" horizontal="start" slot="fixed">
-        <ion-fab-button @click="refreshReports">
+        <ion-fab-button @click="refreshReports" class="refresh-btn">
           🔄
         </ion-fab-button>
       </ion-fab>
 
-      <!-- Toggle Mes signalements -->
+      <!-- Toggle Mes signalements - Activé par défaut -->
       <ion-fab vertical="top" horizontal="end" slot="fixed" style="margin-top: 60px;">
         <ion-fab-button 
-          :color="showOnlyMyReports ? 'success' : 'medium'"
+          :color="showOnlyMyReports ? 'warning' : 'medium'"
           @click="toggleMyReports"
           size="small"
         >
@@ -79,8 +79,8 @@ let reportMarkers: L.Layer[] = []
 let unsubscribe: (() => void) | null = null
 let allReports: Report[] = []
 
-// 🔍 État du filtre
-const showOnlyMyReports = ref(false)
+// 🔍 État du filtre - Activé par défaut pour voir ses propres signalements
+const showOnlyMyReports = ref(true)
 
 // 📍 Initialisation carte
 const initMap = () => {
@@ -271,5 +271,22 @@ window.addEventListener('online', () => {
 #map {
   width: 100%;
   height: 100%;
+}
+
+/* Toolbar personnalisée */
+.map-toolbar {
+  --background: linear-gradient(135deg, #00D9FF 0%, #00B4D8 100%);
+  --color: white;
+}
+
+/* Boutons flottants */
+ion-fab-button.locate-btn {
+  --background: linear-gradient(135deg, #00B4D8 0%, #0096C7 100%);
+  --color: white;
+}
+
+ion-fab-button.refresh-btn {
+  --background: linear-gradient(135deg, #00D9FF 0%, #00B4D8 100%);
+  --color: white;
 }
 </style>

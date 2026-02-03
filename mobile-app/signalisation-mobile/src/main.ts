@@ -4,7 +4,8 @@ import router from './router'
 import './firebase/firebase'
 import 'leaflet/dist/leaflet.css'
 
-
+// 🔔 Import du service de notifications
+import { notificationService } from './services/notification.service'
 
 import { IonicVue } from '@ionic/vue';
 
@@ -44,4 +45,7 @@ const app = createApp(App)
 
 router.isReady().then(() => {
   app.mount('#app');
+  
+  // 🔔 Initialiser les notifications
+  notificationService.initialize()
 });

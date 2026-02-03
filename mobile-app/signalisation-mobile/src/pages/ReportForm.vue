@@ -157,9 +157,18 @@ const submitReport = async () => {
 
 </script>
 <style scoped>
-/* Page background */
+/* Page background - Nouveau thème sombre */
 ion-content {
-  --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+}
+
+ion-toolbar {
+  --background: linear-gradient(135deg, #FF6B35, #F7931E);
+  --color: white;
+}
+
+ion-back-button {
+  --color: white;
 }
 
 /* Container */
@@ -167,24 +176,40 @@ ion-content {
   max-width: 600px;
   margin: 0 auto;
   padding: 20px 0;
+  animation: fadeInUp 0.5s ease-out;
 }
 
-/* Carte principale */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Carte principale - Glassmorphism */
 .form-card {
   border-radius: 20px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .form-card ion-card-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #00B4D8 0%, #0096C7 100%);
   color: white;
   padding: 20px;
 }
 
 .form-card ion-card-title {
   font-size: 20px;
-  font-weight: 600;
+  font-weight: 700;
+  color: white;
 }
 
 .form-card ion-card-content {
@@ -200,15 +225,18 @@ ion-content {
   display: block;
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: rgba(255, 255, 255, 0.8);
   margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 /* Position display */
 .position-display {
-  background: #f5f5f5;
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 12px;
   padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .position-item {
@@ -222,31 +250,42 @@ ion-content {
 }
 
 .position-value {
-  font-family: monospace;
+  font-family: 'Courier New', monospace;
   font-size: 13px;
-  color: #666;
+  color: #00D9FF;
   word-break: break-all;
+  font-weight: 600;
 }
 
 /* Textarea personnalisé */
 .custom-textarea {
-  --background: #f5f5f5;
+  --background: rgba(255, 255, 255, 0.05);
+  --color: white;
+  --placeholder-color: rgba(255, 255, 255, 0.4);
   --padding-start: 16px;
   --padding-end: 16px;
   --padding-top: 12px;
   --padding-bottom: 12px;
   border-radius: 12px;
   font-size: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Bouton submit */
 .submit-button {
   margin-top: 24px;
   --border-radius: 12px;
-  --box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-  font-weight: 600;
+  --background: linear-gradient(135deg, #00B4D8, #0096C7);
+  --box-shadow: 0 4px 20px rgba(0, 180, 216, 0.5);
+  font-weight: 700;
   font-size: 16px;
   height: 56px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.submit-button:hover {
+  --background: linear-gradient(135deg, #0096C7, #00B4D8);
 }
 
 .submit-button span:first-child {

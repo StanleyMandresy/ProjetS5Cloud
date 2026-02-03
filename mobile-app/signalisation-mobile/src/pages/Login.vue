@@ -103,9 +103,9 @@ const onLogin = async () => {
 </script>
 
 <style scoped>
-/* Background avec dégradé */
+/* Background sombre avec dégradé (comme ReportForm) */
 .login-content {
-  --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
 }
 
 /* Container principal */
@@ -122,6 +122,18 @@ const onLogin = async () => {
 .login-header {
   text-align: center;
   margin-bottom: 40px;
+  animation: fadeInDown 0.6s ease-out;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .logo-container {
@@ -144,24 +156,39 @@ const onLogin = async () => {
 
 .app-title {
   font-size: 32px;
-  font-weight: bold;
+  font-weight: 700;
   color: white;
   margin: 0 0 8px 0;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
 .app-subtitle {
   font-size: 16px;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.7);
   margin: 0;
 }
 
-/* Carte de connexion */
+/* Carte de connexion - Glassmorphism sombre (comme ReportForm) */
 .login-card {
   width: 100%;
   max-width: 400px;
   border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .login-card ion-card-content {
@@ -172,55 +199,67 @@ const onLogin = async () => {
 .input-group {
   position: relative;
   margin-bottom: 20px;
-  background: #f5f5f5;
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 12px;
   display: flex;
   align-items: center;
   padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .input-icon {
   font-size: 20px;
   padding: 0 12px;
-  color: #666;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .custom-input {
   --padding-start: 8px;
   --padding-end: 12px;
   --background: transparent;
+  --color: white;
+  --placeholder-color: rgba(255, 255, 255, 0.4);
   font-size: 16px;
 }
 
 /* Message d'erreur */
 .error-message {
-  background: #ffebee;
-  color: #c62828;
+  background: rgba(239, 68, 68, 0.2);
+  color: #FF9999;
   padding: 12px 16px;
   border-radius: 12px;
   margin-bottom: 20px;
   font-size: 14px;
   text-align: center;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 /* Bouton de connexion */
 .login-button {
+  --background: linear-gradient(135deg, #00B4D8 0%, #0096C7 100%);
   --border-radius: 12px;
-  --box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-  font-weight: 600;
+  --box-shadow: 0 4px 20px rgba(0, 180, 216, 0.5);
+  font-weight: 700;
   font-size: 16px;
   height: 56px;
   margin-top: 24px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.login-button:hover {
+  --background: linear-gradient(135deg, #0096C7 0%, #00B4D8 100%);
 }
 
 /* Footer */
 .login-footer {
   margin-top: 32px;
   text-align: center;
+  animation: fadeInUp 0.8s ease-out;
 }
 
 .login-footer p {
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.7);
   font-size: 14px;
   margin: 0;
 }

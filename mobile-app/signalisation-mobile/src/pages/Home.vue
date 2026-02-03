@@ -74,6 +74,7 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import { onMounted, onUnmounted } from 'vue'
 import {
   IonPage,
   IonHeader,
@@ -87,8 +88,26 @@ import {
 } from '@ionic/vue'
 import { logOutOutline } from 'ionicons/icons'
 import { authService } from '@/services/auth.service'
+import { reportService } from '@/services/report.service'
 
 const router = useRouter()
+
+// 🔔 Unsubscribe pour arrêter l'écoute des notifications
+let unsubscribeNotifications: (() => void) | null = null
+
+// 🔔 Démarrer l'écoute des changements de statut de mes signalements
+onMounted(() => {
+  unsubscribeNotifications = reportService.listenToMyReportsWithNotifications((reports) => {
+    console.log('📋 Mes signalements mis à jour:', reports.length)
+  })
+})
+
+// 🔔 Arrêter l'écoute quand on quitte la page
+onUnmounted(() => {
+  if (unsubscribeNotifications) {
+    unsubscribeNotifications()
+  }
+})
 
 // Redirection vers /map
 const goToMap = () => {
@@ -128,18 +147,18 @@ const logout = async () => {
 <style scoped>
 /* Toolbar personnalisée */
 .custom-toolbar {
-  --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --background: linear-gradient(135deg, #00B4D8 0%, #0096C7 100%);
   --color: white;
 }
 
 /* Background de la page */
 .home-content {
-  --background: #f5f5f5;
+  --background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
 }
 
 /* Section hero */
 .hero-section {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #00B4D8 0%, #0096C7 50%, #007BA8 100%);
   padding: 40px 20px;
   text-align: center;
   color: white;
@@ -183,10 +202,10 @@ const logout = async () => {
 
 /* Cartes d'action */
 .action-card {
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 20px;
   padding: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
   display: flex;
   align-items: center;
   gap: 16px;
@@ -194,6 +213,7 @@ const logout = async () => {
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  border: 1px solid rgba(255, 107, 53, 0.2);
 }
 
 .action-card:active {
@@ -212,11 +232,11 @@ const logout = async () => {
 }
 
 .map-bg {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #00D9FF 0%, #00B4D8 100%);
 }
 
 .reports-bg {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  background: linear-gradient(135deg, #00B4D8 0%, #0096C7 100%);
 }
 
 .action-icon {
@@ -258,9 +278,10 @@ const logout = async () => {
 .features-title {
   font-size: 20px;
   font-weight: 600;
-  color: #333;
+  color: #ffffff;
   margin: 0 0 20px 0;
   text-align: center;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
 .features-grid {
@@ -270,11 +291,13 @@ const logout = async () => {
 }
 
 .feature-item {
-  background: white;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
   border-radius: 16px;
   padding: 20px;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .feature-icon {
@@ -284,7 +307,7 @@ const logout = async () => {
 
 .feature-text {
   font-size: 13px;
-  color: #666;
+  color: rgba(255, 255, 255, 0.9);
   margin: 0;
   font-weight: 500;
 }
