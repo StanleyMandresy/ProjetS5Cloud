@@ -19,6 +19,11 @@ VALUES
     ('Chef de Projet', 'chef.projet@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'MANAGER')
 ON CONFLICT (email) DO NOTHING;
 
+UPDATE utilisateur
+SET role = 'MANAGER'
+WHERE id_utilisateur = 6;
+
+
 -- =========================
 -- UTILISATEUR USER
 -- =========================
