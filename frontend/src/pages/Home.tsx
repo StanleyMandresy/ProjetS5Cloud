@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import Map from '../components/Map';
 import Sidebar from '../components/Sidebar';
+import { useSignalements } from '../context/SignalementContext';
 import {
   TrendingUp,
   DollarSign,
@@ -17,7 +18,7 @@ import {
 const Home: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-
+  const { syncSignalements, loading } = useSignalements();
   // Données de vente simulées
   const salesData = {
     today: 12450,
@@ -80,13 +81,20 @@ const Home: React.FC = () => {
 
         {/* Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Ventes Récentes */}
-          
-
-          {/* Top Produits */}
-          
+        
         </div>
 
+        {/* Signalements Sync Button */}
+        {(user?.role === 'MANAGER' || user?.role === 'ADMIN') && (
+          <button
+            onClick={syncSignalements}
+            disabled={loading}
+            className="mb-8 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-semibold shadow-lg disabled:opacity-50"
+          >
+            {loading ? "Synchronisation..." : "Synchroniser les signalements"}
+          </button>
+        )}
+       
         {/* Map Container */}
         <div className="bg-white rounded-2xl p-6 shadow-lg border border-itu-gray/30">
           <h2 className="text-xl font-bold text-gray-900 mb-6">Localisation des Points de Vente</h2>
@@ -96,6 +104,7 @@ const Home: React.FC = () => {
         </div>
       </main>
     </div>
+    
   );
 };
 

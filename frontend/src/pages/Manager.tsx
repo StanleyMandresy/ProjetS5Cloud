@@ -8,6 +8,8 @@ import type { EtapeTravaux, CreateEtapeRequest } from '../types/etapes.types';
 import type { HistoriqueEtape } from '../types/historique.types';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
+import { useSignalements } from '../context/SignalementContext';
+
 import {
   Plus,
   Edit,
@@ -32,7 +34,8 @@ const Manager: React.FC = () => {
   const navigate = useNavigate();
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
-  
+  const { signalements, loading, syncSignalements } = useSignalements();
+
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [filterStatut, setFilterStatut] = useState<string>('TOUS');
@@ -51,12 +54,11 @@ const Manager: React.FC = () => {
   const [showHistoriqueModal, setShowHistoriqueModal] = useState(false);
   const [historiquePoint, setHistoriquePoint] = useState<HistoriqueEtape[]>([]);
   const [selectedPointId, setSelectedPointId] = useState<number | null>(null);
+
   const [showDatePickerModal, setShowDatePickerModal] = useState(false);
   const [pendingStatusChange, setPendingStatusChange] = useState<{ pointId: number, newStatut: string } | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>('');
-  const [selectedDateDebut, setSelectedDateDebut] = useState<string>('');
-  const [needsDebutDate, setNeedsDebutDate] = useState(false);
-  
+
   const [formData, setFormData] = useState<CreateTravailRequest>({
     titre: '',
     description: '',
@@ -71,6 +73,31 @@ const Manager: React.FC = () => {
     loadStatistiques();
     loadStatistiquesTraitement();
   }, [travaux]);
+
+  useEffect(() => {
+    if (showEtapesModal) {
+      loadEtapes();
+    }
+  }, [showEtapesModal]);
+
+  useEffect(() => {
+    if (showCreateForm) {
+      initMap();
+    }
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, [showCreateForm]);
+
+  useEffect(() => {
+    if (markerRef.current && mapRef.current) {
+      markerRef.current.setLatLng([formData.latitude, formData.longitude]);
+      mapRef.current.setView([formData.latitude, formData.longitude]);
+    }
+  }, [formData.latitude, formData.longitude]);
 
   const loadStatistiques = async () => {
     try {
@@ -132,12 +159,6 @@ const Manager: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    if (showEtapesModal) {
-      loadEtapes();
-    }
-  }, [showEtapesModal]);
-
   const handleShowHistorique = async (pointId: number) => {
     try {
       const historique = await travauxService.getHistorique(pointId);
@@ -151,48 +172,39 @@ const Manager: React.FC = () => {
   };
 
   const handleQuickStatusChange = async (pointId: number, newStatut: string) => {
-    const travail = travaux.find(t => t.id === pointId);
-    if (!travail) return;
+    if (!confirm(`Changer le statut vers "${newStatut}" ?`)) return;
     
-    // Si le statut change vers EN_COURS ou TERMINE, afficher le sélecteur de date
-    if ((newStatut === 'EN_COURS' && travail.statut !== 'EN_COURS') || 
-        (newStatut === 'TERMINE' && travail.statut !== 'TERMINE')) {
-      setPendingStatusChange({ pointId, newStatut });
-      // Définir la date par défaut à aujourd'hui
-      const today = new Date().toISOString().split('T')[0];
-      setSelectedDate(today);
+    try {
+      const travail = travaux.find(t => t.id === pointId);
+      if (!travail) return;
       
-      // Si passage à TERMINE sans date de début, demander aussi la date de début
-      if (newStatut === 'TERMINE' && !travail.dateDebutTravaux) {
-        setNeedsDebutDate(true);
-        setSelectedDateDebut(today);
-      } else {
-        setNeedsDebutDate(false);
-        setSelectedDateDebut('');
+      // Si le statut change vers EN_COURS ou TERMINE, afficher le sélecteur de date
+      if ((newStatut === 'EN_COURS' && travail.statut !== 'EN_COURS') || 
+          (newStatut === 'TERMINE' && travail.statut !== 'TERMINE')) {
+        setPendingStatusChange({ pointId, newStatut });
+        // Définir la date par défaut à aujourd'hui
+        setSelectedDate(new Date().toISOString().split('T')[0]);
+        setShowDatePickerModal(true);
+        return;
       }
       
-      setShowDatePickerModal(true);
-      return;
+      // Pour les autres changements de statut, procéder directement
+      await executeStatusChange(pointId, newStatut, undefined);
+    } catch (error) {
+      console.error('Erreur changement statut:', error);
+      alert('Erreur lors du changement de statut');
     }
-    
-    // Pour les autres changements de statut, procéder directement
-    await executeStatusChange(pointId, newStatut, undefined, undefined);
   };
   
-  const executeStatusChange = async (pointId: number, newStatut: string, dateFin?: string, dateDebut?: string) => {
+  const executeStatusChange = async (pointId: number, newStatut: string, date?: string) => {
     try {
       const updateData: any = { statut: newStatut };
       
       // Ajouter la date appropriée selon le statut
-      if (newStatut === 'EN_COURS' && dateFin) {
-        updateData.dateDebutTravaux = dateFin;
-      } else if (newStatut === 'TERMINE') {
-        if (dateFin) {
-          updateData.dateFinTravaux = dateFin;
-        }
-        if (dateDebut) {
-          updateData.dateDebutTravaux = dateDebut;
-        }
+      if (newStatut === 'EN_COURS' && date) {
+        updateData.dateDebutTravaux = date;
+      } else if (newStatut === 'TERMINE' && date) {
+        updateData.dateFinTravaux = date;
       }
       
       await travauxService.update(pointId, updateData);
@@ -205,42 +217,15 @@ const Manager: React.FC = () => {
       alert('Erreur lors du changement de statut');
     }
   };
-  
+
   const confirmDateChange = async () => {
     if (pendingStatusChange && selectedDate) {
-      // Valider que la date de début est antérieure à la date de fin si les deux sont fournies
-      if (needsDebutDate && selectedDateDebut && selectedDate) {
-        if (selectedDateDebut > selectedDate) {
-          alert('La date de début doit être antérieure ou égale à la date de fin');
-          return;
-        }
-      }
-      
-      await executeStatusChange(
-        pendingStatusChange.pointId, 
-        pendingStatusChange.newStatut, 
-        selectedDate,
-        needsDebutDate ? selectedDateDebut : undefined
-      );
+      await executeStatusChange(pendingStatusChange.pointId, pendingStatusChange.newStatut, selectedDate);
       setShowDatePickerModal(false);
       setPendingStatusChange(null);
       setSelectedDate('');
-      setSelectedDateDebut('');
-      setNeedsDebutDate(false);
     }
   };
-
-  useEffect(() => {
-    if (showCreateForm) {
-      initMap();
-    }
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
-    };
-  }, [showCreateForm]);
 
   const initMap = () => {
     setTimeout(() => {
@@ -379,14 +364,6 @@ const Manager: React.FC = () => {
     setEditingId(travail.id);
     setShowCreateForm(true);
   };
-
-  // Mettre à jour le marker quand les coordonnées changent manuellement
-  useEffect(() => {
-    if (markerRef.current && mapRef.current) {
-      markerRef.current.setLatLng([formData.latitude, formData.longitude]);
-      mapRef.current.setView([formData.latitude, formData.longitude]);
-    }
-  }, [formData.latitude, formData.longitude]);
 
   const filteredTravaux = filterStatut === 'TOUS' 
     ? travaux 
@@ -861,6 +838,72 @@ const Manager: React.FC = () => {
             ))}
           </div>
         </div>
+
+        {/* Signalements */}
+        <div className="bg-white rounded-2xl shadow-lg border border-itu-gray/30 overflow-hidden mt-8">
+          <div className="p-6 border-b border-itu-gray/30 flex items-center justify-between">
+            <h2 className="text-xl font-bold text-gray-900">
+              Signalements mobiles ({signalements.length})
+            </h2>
+
+            <button
+              onClick={syncSignalements}
+              disabled={loading}
+              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold disabled:opacity-50"
+            >
+              {loading ? "Chargement..." : "Actualiser"}
+            </button>
+          </div>
+
+          <div className="divide-y divide-itu-gray/30">
+            {signalements.map((s) => (
+              <div key={s.id} className="p-6 hover:bg-blue-50 transition-all">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-3">
+                      <h3 className="text-lg font-bold text-gray-900">
+                        {s.titre ?? "Signalement"}
+                      </h3>
+
+                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">
+                        Signalement
+                      </span>
+                    </div>
+
+                    <p className="text-gray-600 mb-3">
+                      {s.description || "Pas de description"}
+                    </p>
+
+                    <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                      <span className="flex items-center gap-1">
+                        <MapPin className="w-4 h-4" />
+                        {s.latitude.toFixed(4)}, {s.longitude.toFixed(4)}
+                      </span>
+
+                      {s.createdAt && (
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-4 h-4" />
+                          {new Date(s.createdAt).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions futures possibles */}
+                  <div className="ml-4 text-blue-500 font-semibold text-sm">
+                    En attente
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {signalements.length === 0 && !loading && (
+              <div className="p-6 text-center text-gray-500">
+                Aucun signalement chargé
+              </div>
+            )}
+          </div>
+        </div>
       </main>
 
       {/* Modal Gestion des Étapes */}
@@ -1202,50 +1245,23 @@ const Manager: React.FC = () => {
                 Vous changez le statut vers <strong>{pendingStatusChange.newStatut}</strong>.
                 {pendingStatusChange.newStatut === 'EN_COURS' && 
                   ' Veuillez choisir la date de début des travaux :'}
-                {pendingStatusChange.newStatut === 'TERMINE' && !needsDebutDate &&
+                {pendingStatusChange.newStatut === 'TERMINE' && 
                   ' Veuillez choisir la date de fin des travaux :'}
-                {pendingStatusChange.newStatut === 'TERMINE' && needsDebutDate &&
-                  ' Veuillez choisir les dates de début et de fin des travaux :'}
               </p>
-              
-              {needsDebutDate && (
-                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-sm text-yellow-800">
-                    ⚠️ Ce travail n'a pas de date de début. Veuillez la spécifier.
-                  </p>
-                </div>
-              )}
-              
-              {needsDebutDate && (
-                <div className="mb-4">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Date de début des travaux *
-                  </label>
-                  <input
-                    type="date"
-                    value={selectedDateDebut}
-                    onChange={(e) => setSelectedDateDebut(e.target.value)}
-                    max={selectedDate || new Date().toISOString().split('T')[0]}
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-itu-accent focus:border-transparent text-lg"
-                  />
-                </div>
-              )}
               
               <div className="mb-6">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Date {pendingStatusChange.newStatut === 'EN_COURS' ? 'de début' : 'de fin'} {needsDebutDate && '*'}
+                  Date {pendingStatusChange.newStatut === 'EN_COURS' ? 'de début' : 'de fin'}
                 </label>
                 <input
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  min={needsDebutDate ? selectedDateDebut : undefined}
                   max={new Date().toISOString().split('T')[0]}
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-itu-accent focus:border-transparent text-lg"
                 />
                 <p className="text-xs text-gray-500 mt-2">
                   La date ne peut pas être dans le futur
-                  {needsDebutDate && ' et doit être postérieure ou égale à la date de début'}
                 </p>
               </div>
               
@@ -1255,8 +1271,6 @@ const Manager: React.FC = () => {
                     setShowDatePickerModal(false);
                     setPendingStatusChange(null);
                     setSelectedDate('');
-                    setSelectedDateDebut('');
-                    setNeedsDebutDate(false);
                   }}
                   className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all font-semibold"
                 >
@@ -1264,7 +1278,7 @@ const Manager: React.FC = () => {
                 </button>
                 <button
                   onClick={confirmDateChange}
-                  disabled={!selectedDate || (needsDebutDate && !selectedDateDebut)}
+                  disabled={!selectedDate}
                   className="flex-1 px-4 py-3 bg-black text-white rounded-lg hover:shadow-lg transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Confirmer
