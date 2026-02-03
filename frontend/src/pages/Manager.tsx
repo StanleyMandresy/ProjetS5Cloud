@@ -54,6 +54,8 @@ const Manager: React.FC = () => {
   const [showDatePickerModal, setShowDatePickerModal] = useState(false);
   const [pendingStatusChange, setPendingStatusChange] = useState<{ pointId: number, newStatut: string } | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>('');
+  const [selectedDateDebut, setSelectedDateDebut] = useState<string>('');
+  const [needsDebutDate, setNeedsDebutDate] = useState(false);
   
   const [formData, setFormData] = useState<CreateTravailRequest>({
     titre: '',
@@ -157,24 +159,40 @@ const Manager: React.FC = () => {
         (newStatut === 'TERMINE' && travail.statut !== 'TERMINE')) {
       setPendingStatusChange({ pointId, newStatut });
       // Définir la date par défaut à aujourd'hui
-      setSelectedDate(new Date().toISOString().split('T')[0]);
+      const today = new Date().toISOString().split('T')[0];
+      setSelectedDate(today);
+      
+      // Si passage à TERMINE sans date de début, demander aussi la date de début
+      if (newStatut === 'TERMINE' && !travail.dateDebutTravaux) {
+        setNeedsDebutDate(true);
+        setSelectedDateDebut(today);
+      } else {
+        setNeedsDebutDate(false);
+        setSelectedDateDebut('');
+      }
+      
       setShowDatePickerModal(true);
       return;
     }
     
     // Pour les autres changements de statut, procéder directement
-    await executeStatusChange(pointId, newStatut, undefined);
+    await executeStatusChange(pointId, newStatut, undefined, undefined);
   };
   
-  const executeStatusChange = async (pointId: number, newStatut: string, date?: string) => {
+  const executeStatusChange = async (pointId: number, newStatut: string, dateFin?: string, dateDebut?: string) => {
     try {
       const updateData: any = { statut: newStatut };
       
       // Ajouter la date appropriée selon le statut
-      if (newStatut === 'EN_COURS' && date) {
-        updateData.dateDebutTravaux = date;
-      } else if (newStatut === 'TERMINE' && date) {
-        updateData.dateFinTravaux = date;
+      if (newStatut === 'EN_COURS' && dateFin) {
+        updateData.dateDebutTravaux = dateFin;
+      } else if (newStatut === 'TERMINE') {
+        if (dateFin) {
+          updateData.dateFinTravaux = dateFin;
+        }
+        if (dateDebut) {
+          updateData.dateDebutTravaux = dateDebut;
+        }
       }
       
       await travauxService.update(pointId, updateData);
@@ -190,10 +208,25 @@ const Manager: React.FC = () => {
   
   const confirmDateChange = async () => {
     if (pendingStatusChange && selectedDate) {
-      await executeStatusChange(pendingStatusChange.pointId, pendingStatusChange.newStatut, selectedDate);
+      // Valider que la date de début est antérieure à la date de fin si les deux sont fournies
+      if (needsDebutDate && selectedDateDebut && selectedDate) {
+        if (selectedDateDebut > selectedDate) {
+          alert('La date de début doit être antérieure ou égale à la date de fin');
+          return;
+        }
+      }
+      
+      await executeStatusChange(
+        pendingStatusChange.pointId, 
+        pendingStatusChange.newStatut, 
+        selectedDate,
+        needsDebutDate ? selectedDateDebut : undefined
+      );
       setShowDatePickerModal(false);
       setPendingStatusChange(null);
       setSelectedDate('');
+      setSelectedDateDebut('');
+      setNeedsDebutDate(false);
     }
   };
 
@@ -1169,23 +1202,50 @@ const Manager: React.FC = () => {
                 Vous changez le statut vers <strong>{pendingStatusChange.newStatut}</strong>.
                 {pendingStatusChange.newStatut === 'EN_COURS' && 
                   ' Veuillez choisir la date de début des travaux :'}
-                {pendingStatusChange.newStatut === 'TERMINE' && 
+                {pendingStatusChange.newStatut === 'TERMINE' && !needsDebutDate &&
                   ' Veuillez choisir la date de fin des travaux :'}
+                {pendingStatusChange.newStatut === 'TERMINE' && needsDebutDate &&
+                  ' Veuillez choisir les dates de début et de fin des travaux :'}
               </p>
+              
+              {needsDebutDate && (
+                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-sm text-yellow-800">
+                    ⚠️ Ce travail n'a pas de date de début. Veuillez la spécifier.
+                  </p>
+                </div>
+              )}
+              
+              {needsDebutDate && (
+                <div className="mb-4">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Date de début des travaux *
+                  </label>
+                  <input
+                    type="date"
+                    value={selectedDateDebut}
+                    onChange={(e) => setSelectedDateDebut(e.target.value)}
+                    max={selectedDate || new Date().toISOString().split('T')[0]}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-itu-accent focus:border-transparent text-lg"
+                  />
+                </div>
+              )}
               
               <div className="mb-6">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Date {pendingStatusChange.newStatut === 'EN_COURS' ? 'de début' : 'de fin'}
+                  Date {pendingStatusChange.newStatut === 'EN_COURS' ? 'de début' : 'de fin'} {needsDebutDate && '*'}
                 </label>
                 <input
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
+                  min={needsDebutDate ? selectedDateDebut : undefined}
                   max={new Date().toISOString().split('T')[0]}
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-itu-accent focus:border-transparent text-lg"
                 />
                 <p className="text-xs text-gray-500 mt-2">
                   La date ne peut pas être dans le futur
+                  {needsDebutDate && ' et doit être postérieure ou égale à la date de début'}
                 </p>
               </div>
               
@@ -1195,6 +1255,8 @@ const Manager: React.FC = () => {
                     setShowDatePickerModal(false);
                     setPendingStatusChange(null);
                     setSelectedDate('');
+                    setSelectedDateDebut('');
+                    setNeedsDebutDate(false);
                   }}
                   className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all font-semibold"
                 >
@@ -1202,7 +1264,7 @@ const Manager: React.FC = () => {
                 </button>
                 <button
                   onClick={confirmDateChange}
-                  disabled={!selectedDate}
+                  disabled={!selectedDate || (needsDebutDate && !selectedDateDebut)}
                   className="flex-1 px-4 py-3 bg-black text-white rounded-lg hover:shadow-lg transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Confirmer

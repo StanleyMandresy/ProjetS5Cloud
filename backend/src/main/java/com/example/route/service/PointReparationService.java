@@ -140,6 +140,11 @@ public class PointReparationService {
                 if (point.getDateFinTravaux() == null) {
                     point.setDateFinTravaux(request.getDateFinTravaux() != null ? request.getDateFinTravaux() : LocalDate.now());
                 }
+                // Si pas de date de début, demander à l'utilisateur ou utiliser la date de signalement
+                if (point.getDateDebutTravaux() == null) {
+                    // Si une date de début est fournie, l'utiliser, sinon utiliser la date de signalement
+                    point.setDateDebutTravaux(request.getDateDebutTravaux() != null ? request.getDateDebutTravaux() : point.getDateSignalement());
+                }
             }
         }
         
