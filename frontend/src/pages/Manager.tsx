@@ -51,6 +51,9 @@ const Manager: React.FC = () => {
   const [showHistoriqueModal, setShowHistoriqueModal] = useState(false);
   const [historiquePoint, setHistoriquePoint] = useState<HistoriqueEtape[]>([]);
   const [selectedPointId, setSelectedPointId] = useState<number | null>(null);
+  const [showDatePickerModal, setShowDatePickerModal] = useState(false);
+  const [pendingStatusChange, setPendingStatusChange] = useState<{ pointId: number, newStatut: string } | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string>('');
   
   const [formData, setFormData] = useState<CreateTravailRequest>({
     titre: '',
@@ -146,9 +149,35 @@ const Manager: React.FC = () => {
   };
 
   const handleQuickStatusChange = async (pointId: number, newStatut: string) => {
-    if (!confirm(`Changer le statut vers "${newStatut}" ?`)) return;
+    const travail = travaux.find(t => t.id === pointId);
+    if (!travail) return;
+    
+    // Si le statut change vers EN_COURS ou TERMINE, afficher le sélecteur de date
+    if ((newStatut === 'EN_COURS' && travail.statut !== 'EN_COURS') || 
+        (newStatut === 'TERMINE' && travail.statut !== 'TERMINE')) {
+      setPendingStatusChange({ pointId, newStatut });
+      // Définir la date par défaut à aujourd'hui
+      setSelectedDate(new Date().toISOString().split('T')[0]);
+      setShowDatePickerModal(true);
+      return;
+    }
+    
+    // Pour les autres changements de statut, procéder directement
+    await executeStatusChange(pointId, newStatut, undefined);
+  };
+  
+  const executeStatusChange = async (pointId: number, newStatut: string, date?: string) => {
     try {
-      await travauxService.update(pointId, { statut: newStatut });
+      const updateData: any = { statut: newStatut };
+      
+      // Ajouter la date appropriée selon le statut
+      if (newStatut === 'EN_COURS' && date) {
+        updateData.dateDebutTravaux = date;
+      } else if (newStatut === 'TERMINE' && date) {
+        updateData.dateFinTravaux = date;
+      }
+      
+      await travauxService.update(pointId, updateData);
       await refresh();
       loadStatistiques();
       loadStatistiquesTraitement();
@@ -156,6 +185,15 @@ const Manager: React.FC = () => {
     } catch (error) {
       console.error('Erreur changement statut:', error);
       alert('Erreur lors du changement de statut');
+    }
+  };
+  
+  const confirmDateChange = async () => {
+    if (pendingStatusChange && selectedDate) {
+      await executeStatusChange(pendingStatusChange.pointId, pendingStatusChange.newStatut, selectedDate);
+      setShowDatePickerModal(false);
+      setPendingStatusChange(null);
+      setSelectedDate('');
     }
   };
 
@@ -1110,6 +1148,66 @@ const Manager: React.FC = () => {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal pour choisir la date de changement de statut */}
+      {showDatePickerModal && pendingStatusChange && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
+            <div className="bg-black text-white px-6 py-4 rounded-t-2xl">
+              <h2 className="text-2xl font-bold flex items-center gap-2">
+                <Clock className="w-6 h-6" />
+                Choisir une date
+              </h2>
+            </div>
+            
+            <div className="p-6">
+              <p className="text-gray-700 mb-4">
+                Vous changez le statut vers <strong>{pendingStatusChange.newStatut}</strong>.
+                {pendingStatusChange.newStatut === 'EN_COURS' && 
+                  ' Veuillez choisir la date de début des travaux :'}
+                {pendingStatusChange.newStatut === 'TERMINE' && 
+                  ' Veuillez choisir la date de fin des travaux :'}
+              </p>
+              
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Date {pendingStatusChange.newStatut === 'EN_COURS' ? 'de début' : 'de fin'}
+                </label>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  max={new Date().toISOString().split('T')[0]}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-itu-accent focus:border-transparent text-lg"
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  La date ne peut pas être dans le futur
+                </p>
+              </div>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowDatePickerModal(false);
+                    setPendingStatusChange(null);
+                    setSelectedDate('');
+                  }}
+                  className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all font-semibold"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={confirmDateChange}
+                  disabled={!selectedDate}
+                  className="flex-1 px-4 py-3 bg-black text-white rounded-lg hover:shadow-lg transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Confirmer
+                </button>
+              </div>
             </div>
           </div>
         </div>

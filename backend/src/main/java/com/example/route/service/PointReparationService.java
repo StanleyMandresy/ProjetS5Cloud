@@ -133,14 +133,22 @@ public class PointReparationService {
             if ("EN_COURS".equals(request.getStatut()) && !"EN_COURS".equals(ancienStatut)) {
                 // Passage à EN_COURS : enregistrer la date de début
                 if (point.getDateDebutTravaux() == null) {
-                    point.setDateDebutTravaux(LocalDate.now());
+                    point.setDateDebutTravaux(request.getDateDebutTravaux() != null ? request.getDateDebutTravaux() : LocalDate.now());
                 }
             } else if ("TERMINE".equals(request.getStatut()) && !"TERMINE".equals(ancienStatut)) {
                 // Passage à TERMINE : enregistrer la date de fin
                 if (point.getDateFinTravaux() == null) {
-                    point.setDateFinTravaux(LocalDate.now());
+                    point.setDateFinTravaux(request.getDateFinTravaux() != null ? request.getDateFinTravaux() : LocalDate.now());
                 }
             }
+        }
+        
+        // Mettre à jour les dates si fournies explicitement
+        if (request.getDateDebutTravaux() != null) {
+            point.setDateDebutTravaux(request.getDateDebutTravaux());
+        }
+        if (request.getDateFinTravaux() != null) {
+            point.setDateFinTravaux(request.getDateFinTravaux());
         }
         if (request.getSurfaceM2() != null) {
             point.setSurfaceM2(request.getSurfaceM2());
