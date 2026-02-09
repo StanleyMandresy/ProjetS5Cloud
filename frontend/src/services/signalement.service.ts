@@ -10,6 +10,9 @@ export type Signalement = {
   status: "NOUVEAU" | "EN_COURS" | "RESOLU"
   createdAt?: any
   userEmail?: string | null
+  photoUrl?: string
+  surfaceM2?: number
+  budget?: number
 }
 
 export const signalementService = {
@@ -34,7 +37,10 @@ export const signalementService = {
           longitude: data.longitude,
           status: data.status,
           createdAt: data.createdAt,
-          userEmail: data.userEmail ?? null
+          userEmail: data.userEmail ?? null,
+          photoUrl: data.photoUrl,
+          surfaceM2: data.surfaceM2,
+          budget: data.budget
         }
       })
     } catch (error) {
