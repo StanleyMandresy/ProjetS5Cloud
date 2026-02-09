@@ -18,7 +18,10 @@ const Sidebar: React.FC = () => {
 
     { icon: '👤', label: 'Profil', path: '/profile', badge: null },
     ...(user?.role === 'MANAGER' 
-      ? [{ icon: '📊', label: 'Dashboard', path: '/manager', badge: 'NEW' }] 
+      ? [
+          { icon: '📊', label: 'Dashboard', path: '/manager', badge: 'NEW' },
+          { icon: '🔒', label: 'Comptes bloqués', path: '/blocked-users', badge: null }
+        ] 
       : []
     ),
   ];

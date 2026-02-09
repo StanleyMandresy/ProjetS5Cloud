@@ -48,4 +48,4 @@ ON CONFLICT (email) DO NOTHING;
 \echo 'Utilisateurs créés :';
 \echo '========================================';
 SELECT id_utilisateur, nom, email, role FROM utilisateur ORDER BY role, id_utilisateur;
--- UPDATE utilisateur SET role = 'MANAGER' WHERE id_utilisateur=60;
+--UPDATE utilisateur SET role = 'MANAGER' WHERE id_utilisateur=6;

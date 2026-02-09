@@ -16,8 +16,11 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.route.dto.*;
 import com.example.route.model.Utilisateur;
+import com.example.route.model.LoginAttempt;
 import com.example.route.service.AuthService;
 import com.example.route.service.CustomUserDetailsService;
+import com.example.route.repository.LoginAttemptRepository;
+import com.example.route.repository.UtilisateurRepository;
 
 import java.util.Map;
 
@@ -27,10 +30,14 @@ public class AuthController {
     
     private final AuthService authService;
     private final CustomUserDetailsService userDetailsService;
+    private final LoginAttemptRepository loginAttemptRepository;
+    private final UtilisateurRepository utilisateurRepository;
     
-    public AuthController(AuthService authService, CustomUserDetailsService userDetailsService) {
+    public AuthController(AuthService authService, CustomUserDetailsService userDetailsService, LoginAttemptRepository loginAttemptRepository, UtilisateurRepository utilisateurRepository) {
         this.authService = authService;
         this.userDetailsService = userDetailsService;
+        this.loginAttemptRepository = loginAttemptRepository;
+        this.utilisateurRepository = utilisateurRepository;
     }
     
     /**
@@ -186,6 +193,91 @@ public class AuthController {
         return ResponseEntity.ok(Map.of(
             "status", "UP",
             "message", "API d'authentification opérationnelle"
+        ));
+    }
+
+    /**
+     * Manager endpoint: liste des utilisateurs bloqués
+     */
+    @GetMapping("/blocked")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('MANAGER')")
+    public ResponseEntity<?> getBlockedUsers() {
+        // Liste des tentatives bloquées ou bloquées temporairement
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        java.util.List<LoginAttempt> blocked = loginAttemptRepository.findByBlockedTrueOrBlockedUntilAfter(now);
+
+        // Construire une réponse légère
+        java.util.List<java.util.Map<String, Object>> out = new java.util.ArrayList<>();
+        for (LoginAttempt a : blocked) {
+            java.util.Map<String, Object> m = new java.util.HashMap<>();
+            m.put("idAttempt", a.getIdAttempt());
+            m.put("idUtilisateur", a.getIdUtilisateur());
+            if (a.getIdUtilisateur() != null) {
+                try {
+                    Utilisateur u = utilisateurRepository.findById(a.getIdUtilisateur()).orElse(null);
+                    if (u != null) {
+                        m.put("username", u.getNom());
+                        m.put("email", u.getEmail());
+                    }
+                } catch (Exception ignored) {}
+            }
+            m.put("identifier", a.getIdentifier());
+            m.put("attempts", a.getAttempts());
+            m.put("blockedUntil", a.getBlockedUntil());
+            out.add(m);
+        }
+
+        return ResponseEntity.ok(out);
+    }
+
+    /**
+     * Manager endpoint: débloquer un utilisateur par id
+     */
+    @PostMapping("/unblock/{userId}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('MANAGER')")
+    public ResponseEntity<?> unblockUser(@PathVariable Integer userId) {
+        // Trouver la ligne de login_attempts pour cet utilisateur
+        LoginAttempt attempt = loginAttemptRepository.findByIdUtilisateur(userId).orElse(null);
+        if (attempt == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse("Aucune trace de tentatives pour cet utilisateur", 404));
+        }
+
+        attempt.setBlocked(false);
+        attempt.setAttempts(0);
+        attempt.setBlockedUntil(null);
+        loginAttemptRepository.save(attempt);
+
+        return ResponseEntity.ok(Map.of("message", "Utilisateur débloqué"));
+    }
+
+    /**
+     * User endpoint: demander un déblocage auprès d'un manager
+     */
+    @PostMapping("/request-unblock")
+    public ResponseEntity<?> requestUnblock(@RequestBody java.util.Map<String, String> request) {
+        String username = request.get("username");
+        if (username == null || username.isBlank()) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("Username requis", 400));
+        }
+
+        // Vérifier que le compte est bloqué
+        LoginAttempt attempt = loginAttemptRepository.findByIdentifier(username).orElse(null);
+        if (attempt == null) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("Compte non trouvé", 400));
+        }
+
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        boolean isBlocked = Boolean.TRUE.equals(attempt.getBlocked()) || 
+                           (attempt.getBlockedUntil() != null && attempt.getBlockedUntil().isAfter(now));
+        if (!isBlocked) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("Ce compte n'est pas bloqué", 400));
+        }
+
+        // Enregistrer la demande de déblocage (simple log pour le moment)
+        System.out.println("🔓 DEMANDE DE DÉBLOCAGE - Username: " + username + " - Time: " + now);
+
+        return ResponseEntity.ok(Map.of(
+            "message", "Demande de déblocage envoyée. Un manager examinera votre demande prochainement."
         ));
     }
 }

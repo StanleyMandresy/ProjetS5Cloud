@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Lock, User, Mail, AlertCircle, ShoppingCart, Sparkles } from 'lucide-react';
+import { Lock, User, Mail, AlertCircle, ShoppingCart, Sparkles, HelpCircle } from 'lucide-react';
+import { authService } from '../services/auth.service';
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [requestingSent, setRequestingSent] = useState(false);
   
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -16,16 +18,43 @@ const Login: React.FC = () => {
     e.preventDefault();
     setError('');
     setLoading(true);
+    setRequestingSent(false);
 
     try {
       await login({ username, password });
       navigate('/');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Erreur de connexion');
+      console.error('Erreur de connexion complète:', err);
+      console.error('Response:', err.response);
+      console.error('Data:', err.response?.data);
+      
+      // Tenter de capturer le message d'erreur de plusieurs façons
+      const errorMessage = 
+        err.response?.data?.message || 
+        err.response?.data?.error ||
+        err.message || 
+        'Erreur de connexion';
+      
+      console.log('Message d\'erreur final:', errorMessage);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
+
+  const handleRequestUnblock = async () => {
+    setRequestingSent(true);
+    try {
+      const res = await authService.requestUnblock(username);
+      setError(res.message || 'Demande envoyée avec succès!');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Erreur lors de l\'envoi de la demande');
+    } finally {
+      setRequestingSent(false);
+    }
+  };
+
+  const isBlocked = error?.toLowerCase().includes('bloqué') || error?.toLowerCase().includes('compte bloqué');
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-itu-light via-itu-lighter to-itu-purple p-4 relative overflow-hidden">
@@ -64,10 +93,23 @@ const Login: React.FC = () => {
             {/* Error Message */}
             {error && (
               <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg animate-shake">
-                <div className="flex items-center">
-                  <AlertCircle className="w-5 h-5 text-red-500 mr-3" />
-                  <p className="text-red-700 text-sm font-medium">{error}</p>
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-red-700 text-sm font-medium">{error}</p>
+                  </div>
                 </div>
+                {isBlocked && (
+                  <button
+                    type="button"
+                    onClick={handleRequestUnblock}
+                    disabled={requestingSent || !username}
+                    className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <HelpCircle className="w-4 h-4" />
+                    {requestingSent ? 'Demande envoyée...' : 'Demander un déblocage au manager'}
+                  </button>
+                )}
               </div>
             )}
 

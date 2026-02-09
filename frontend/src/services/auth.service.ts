@@ -53,4 +53,22 @@ export const authService = {
   isAuthenticated(): boolean {
     return !!this.getToken();
   },
+
+  // Manager: récupérer la liste des utilisateurs bloqués
+  async getBlockedUsers(): Promise<any[]> {
+    const response = await api.get<any[]>('/auth/blocked');
+    return response.data;
+  },
+
+  // Manager: débloquer un utilisateur
+  async unblockUser(userId: number): Promise<any> {
+    const response = await api.post(`/auth/unblock/${userId}`);
+    return response.data;
+  },
+
+  // User: demander un déblocage
+  async requestUnblock(username: string): Promise<any> {
+    const response = await api.post('/auth/request-unblock', { username });
+    return response.data;
+  }
 };
