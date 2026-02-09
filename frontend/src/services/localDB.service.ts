@@ -1,7 +1,7 @@
-import { openDB, DBSchema, IDBPDatabase } from 'idb';
+import { openDB, type IDBPDatabase } from 'idb';
 
 // Schema de la base de données locale
-interface LocalDBSchema extends DBSchema {
+interface LocalDBSchema {
   users: {
     key: string; // UUID temporaire
     value: {
@@ -65,10 +65,10 @@ class LocalDBService {
   // Récupérer tous les utilisateurs non synchronisés
   async getUnsyncedUsers() {
     const db = await this.init();
-    const tx = db.transaction('users', 'readonly');
-    const index = tx.store.index('by-sync-status');
+    const allUsers = await db.getAll('users');
     
-    return await index.getAll(false);
+    // Filtrer manuellement les utilisateurs non synchronisés
+    return allUsers.filter(user => !user.syncedToFirebase);
   }
 
   // Récupérer tous les utilisateurs
