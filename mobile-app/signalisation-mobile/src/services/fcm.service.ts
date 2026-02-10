@@ -1,11 +1,12 @@
-import { getMessaging, getToken } from "@/firebase/firebase/messaging";
+
 import {  messaging } from "../firebase/firebase";
+import { getToken } from "firebase/messaging";
 
 
 export async function getFcmToken(): Promise<string | null> {
   try {
     const token = await getToken(messaging, {
-      vapidKey: "BMHm4OikYaAyEjLoKZIO8FFIrnKYVin9P58MInDZSYJ8N0YKBZRwNLuCOWLZuO77AZHWk42AF9l5p2oi__x1v84"
+      vapidKey: "BK7JgoDObYa6v4nX70gZ4s5_L5dEo4LWlpDyFJ5lqtpZ34dYIfjNHFWZ_WvOxu20B6R2Vrvq91uYHNGc3AmAclY"
     });
 
     if (token) {

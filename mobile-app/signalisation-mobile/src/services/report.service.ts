@@ -48,8 +48,6 @@ class ReportService {
       status: 'NOUVEAU',
       createdAt: serverTimestamp(),
       userId: user.uid,
-      userEmail: user.email
-
       userEmail: user.email,
       photoUrls: data.photoUrls || []
 

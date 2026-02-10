@@ -20,7 +20,7 @@ class AuthService {
 
     return cred;
 
-
+ }
  
 
   async logout() {

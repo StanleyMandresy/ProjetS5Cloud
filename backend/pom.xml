@@ -164,6 +164,13 @@
             <artifactId>commons-validator</artifactId>
             <version>1.7</version>
         </dependency>
+
+        <dependency>
+    <groupId>com.google.firebase</groupId>
+    <artifactId>firebase-admin</artifactId>
+    <version>9.1.1</version> <!-- use latest stable version -->
+</dependency>
+
     </dependencies>
     
     <build>
@@ -220,6 +227,7 @@
                     <include>**/*.properties</include>
                     <include>**/*.xml</include>
                     <include>**/*.jsp</include>
+                    <include>**/*.json</include>
                 </includes>
             </resource>
             <resource>
