@@ -3,6 +3,7 @@ import { RouteRecordRaw } from 'vue-router'
 import Map from '@/pages/Map.vue'
 import ReportForm from '@/pages/ReportForm.vue'
 import Reports from '@/pages/Reports.vue'
+import ReportDetail from '@/pages/ReportDetail.vue'
 
 
 
@@ -50,6 +51,13 @@ const routes: Array<RouteRecordRaw> = [
   name: 'ReportForm',
   component: ReportForm
  },
+
+  // 📸 Détail d'un signalement
+  {
+    path: '/report/:id',
+    name: 'ReportDetail',
+    component: ReportDetail
+  },
 
 
   // 📱 Application principale avec Tabs
