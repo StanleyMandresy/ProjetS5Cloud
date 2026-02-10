@@ -15,11 +15,12 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.route.dto.*;
-import com.example.route.model.Utilisateur;
+import com.example.route.model.*;
+import com.example.route.repository.UserFcmTokenRepository; 
 import com.example.route.service.AuthService;
 import com.example.route.service.CustomUserDetailsService;
 
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -27,10 +28,12 @@ public class AuthController {
     
     private final AuthService authService;
     private final CustomUserDetailsService userDetailsService;
+    private final UserFcmTokenRepository repo;
     
-    public AuthController(AuthService authService, CustomUserDetailsService userDetailsService) {
+    public AuthController(AuthService authService, CustomUserDetailsService userDetailsService, UserFcmTokenRepository repo) {
         this.authService = authService;
         this.userDetailsService = userDetailsService;
+        this.repo = repo;
     }
     
     /**
@@ -188,4 +191,18 @@ public class AuthController {
             "message", "API d'authentification opérationnelle"
         ));
     }
+
+    @PostMapping("/users/fcm-token")
+public void saveToken(@RequestBody FcmTokenRequest request) {
+
+    Optional<UserFcmToken> existing = repo.findByFcmToken(request.getFcmToken());
+
+    if (existing.isEmpty()) {
+        UserFcmToken token = new UserFcmToken();
+        token.setUserEmail(request.getUserEmail());
+        token.setFcmToken(request.getFcmToken());
+        token.setDeviceType(request.getDeviceType());
+        repo.save(token);
+    }
+}
 }
