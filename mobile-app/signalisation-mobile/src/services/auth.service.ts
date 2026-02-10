@@ -1,5 +1,5 @@
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../firebase/firebase';
+import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth'
+import { auth } from '@/firebase/firebase'
 import { getFcmToken } from './fcm.service';
 import axios from 'axios';
 
@@ -19,11 +19,9 @@ class AuthService {
     }
 
     return cred;
-  }
 
-  async register(email: string, password: string) {
-    return createUserWithEmailAndPassword(auth, email, password);
-  }
+
+ 
 
   async logout() {
     return signOut(auth);

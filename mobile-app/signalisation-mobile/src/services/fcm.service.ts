@@ -1,5 +1,5 @@
-import { getMessaging, getToken } from "firebase/messaging";
-import {  messaging } from "../firebase";
+import { getMessaging, getToken } from "@/firebase/firebase/messaging";
+import {  messaging } from "../firebase/firebase";
 
 
 export async function getFcmToken(): Promise<string | null> {
