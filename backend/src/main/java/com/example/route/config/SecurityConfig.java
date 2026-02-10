@@ -100,6 +100,8 @@ public class SecurityConfig {
                 .requestMatchers(new AntPathRequestMatcher("/api/travaux/points/**")).permitAll()
                 .requestMatchers(new AntPathRequestMatcher("/api/travaux/points/statut/**")).permitAll()
                 .requestMatchers(new AntPathRequestMatcher("/api/etapes/**")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/api/configuration/**")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/api/notifications/**")).permitAll()
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider())

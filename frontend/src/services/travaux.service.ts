@@ -56,5 +56,10 @@ export const travauxService = {
     return response.data;
   },
 
+  // Mettre à jour uniquement le niveau de réparation
+  async updateNiveauReparation(id: number, niveau: number): Promise<void> {
+    await api.put(`/travaux/points/${id}`, { niveauReparation: niveau });
+  },
+
 };
 

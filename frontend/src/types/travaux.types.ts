@@ -15,6 +15,7 @@ export interface Travail {
   longitude: number;
   entrepriseNom?: string;
   utilisateurNom?: string;
+  niveauReparation?: number; // Niveau de priorité de 1 à 10
 }
 
 export interface CreateTravailRequest {
@@ -26,6 +27,7 @@ export interface CreateTravailRequest {
   surfaceM2?: number;
   budget?: number;
   entrepriseId?: number;
+  niveauReparation?: number; // Niveau de priorité de 1 à 10
 }
 
 export interface UpdateTravailRequest {
@@ -37,6 +39,7 @@ export interface UpdateTravailRequest {
   surfaceM2?: number;
   budget?: number;
   entrepriseId?: number;
+  niveauReparation?: number; // Niveau de priorité de 1 à 10
 }
 
 export interface Statistiques {

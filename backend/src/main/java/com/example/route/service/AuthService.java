@@ -4,6 +4,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+
+
+import com.example.route.model.User;
+
+import com.example.route.repository.UserRepository;
+
 import com.example.route.model.Utilisateur;
 import com.example.route.model.LoginAttempt;
 import com.example.route.repository.UtilisateurRepository;

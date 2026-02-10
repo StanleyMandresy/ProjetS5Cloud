@@ -17,12 +17,14 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.example.route.dto.*;
 import com.example.route.model.Utilisateur;
 import com.example.route.model.LoginAttempt;
+import com.example.route.model.*;
+import com.example.route.repository.UserFcmTokenRepository; 
 import com.example.route.service.AuthService;
 import com.example.route.service.CustomUserDetailsService;
 import com.example.route.repository.LoginAttemptRepository;
 import com.example.route.repository.UtilisateurRepository;
 
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -38,6 +40,12 @@ public class AuthController {
         this.userDetailsService = userDetailsService;
         this.loginAttemptRepository = loginAttemptRepository;
         this.utilisateurRepository = utilisateurRepository;
+    private final UserFcmTokenRepository repo;
+    
+    public AuthController(AuthService authService, CustomUserDetailsService userDetailsService, UserFcmTokenRepository repo) {
+        this.authService = authService;
+        this.userDetailsService = userDetailsService;
+        this.repo = repo;
     }
     
     /**
@@ -280,4 +288,17 @@ public class AuthController {
             "message", "Demande de déblocage envoyée. Un manager examinera votre demande prochainement."
         ));
     }
+    @PostMapping("/users/fcm-token")
+public void saveToken(@RequestBody FcmTokenRequest request) {
+
+    Optional<UserFcmToken> existing = repo.findByFcmToken(request.getFcmToken());
+
+    if (existing.isEmpty()) {
+        UserFcmToken token = new UserFcmToken();
+        token.setUserEmail(request.getUserEmail());
+        token.setFcmToken(request.getFcmToken());
+        token.setDeviceType(request.getDeviceType());
+        repo.save(token);
+    }
+}
 }

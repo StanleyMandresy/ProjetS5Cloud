@@ -61,31 +61,87 @@ const Map = () => {
         if (!t.latitude || !t.longitude) return;
         const color = getColorByStatus(t.statut);
         const icon = createCustomIcon(color);
-        L.marker([t.latitude, t.longitude], { icon })
-          .addTo(map)
-          .bindPopup(`
-            <div style="min-width:200px;font-family:system-ui;">
-              <h3 style="margin:0 0 8px 0;font-size:16px;font-weight:bold;color:#1f2937;">
-                ${t.titre}
-              </h3>
-              <p style="margin:0 0 8px 0;color:#4b5563;font-size:13px;">
-                ${t.description || "Pas de description"}
-              </p>
-              <div style="background:#f3f4f6;padding:8px;border-radius:6px;">
-                <div style="display:flex;justify-content:space-between;">
-                  <span style="font-weight:600;color:#374151;">Statut:</span>
-                  <span style="
-                    background:${color};
-                    color:white;
-                    padding:2px 8px;
-                    border-radius:12px;
-                    font-size:12px;
-                    font-weight:500;
-                  ">${getStatusText(t.statut)}</span>
+        
+        // Formatter la date
+        const dateSignalement = t.dateSignalement 
+          ? new Date(t.dateSignalement).toLocaleDateString('fr-FR')
+          : 'Non renseignée';
+        
+        // Créer le tooltip au survol
+        const tooltipContent = `
+          <div style="font-family:system-ui;font-size:12px;padding:4px;">
+            <strong style="color:#1f2937;">${t.titre}</strong><br/>
+            <span style="color:#6b7280;">📅 ${dateSignalement}</span><br/>
+            <span style="padding:1px 6px;background:${color};color:white;border-radius:8px;font-size:11px;">
+              ${getStatusText(t.statut)}
+            </span>
+          </div>
+        `;
+        
+        // Créer le popup détaillé au clic
+        const popupContent = `
+          <div style="min-width:250px;font-family:system-ui;">
+            <h3 style="margin:0 0 10px 0;font-size:16px;font-weight:bold;color:#1f2937;">
+              ${t.titre}
+            </h3>
+            <p style="margin:0 0 12px 0;color:#4b5563;font-size:13px;">
+              ${t.description || "Pas de description"}
+            </p>
+            <div style="background:#f3f4f6;padding:10px;border-radius:8px;">
+              <div style="display:grid;gap:6px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span style="font-weight:600;color:#374151;">📅 Date:</span>
+                  <span style="color:#1f2937;font-size:13px;">${dateSignalement}</span>
                 </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span style="font-weight:600;color:#374151;">📊 Statut:</span>
+                  <span style="background:${color};color:white;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:500;">
+                    ${getStatusText(t.statut)}
+                  </span>
+                </div>
+                ${t.surfaceM2 ? `
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span style="font-weight:600;color:#374151;">📐 Surface:</span>
+                  <span style="color:#1f2937;font-size:13px;">${t.surfaceM2} m²</span>
+                </div>
+                ` : ''}
+                ${t.budget ? `
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span style="font-weight:600;color:#374151;">💰 Budget:</span>
+                  <span style="color:#1f2937;font-size:13px;">${t.budget}</span>
+                </div>
+                ` : ''}
+                ${t.entrepriseNom ? `
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span style="font-weight:600;color:#374151;">🏢 Entreprise:</span>
+                  <span style="color:#1f2937;font-size:13px;">${t.entrepriseNom}</span>
+                </div>
+                ` : ''}
+                ${t.niveauReparation ? `
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span style="font-weight:600;color:#374151;">⚡ Niveau:</span>
+                  <span style="padding:2px 8px;background:${
+                    t.niveauReparation <= 3 ? '#22c55e' : 
+                    t.niveauReparation <= 6 ? '#f59e0b' : 
+                    t.niveauReparation <= 8 ? '#fb923c' : '#ef4444'
+                  };color:white;border-radius:12px;font-size:12px;font-weight:500;">
+                    ${t.niveauReparation}/10
+                  </span>
+                </div>
+                ` : ''}
               </div>
             </div>
-          `);
+          </div>
+        `;
+        
+        L.marker([t.latitude, t.longitude], { icon })
+          .addTo(map)
+          .bindTooltip(tooltipContent, {
+            permanent: false,
+            direction: 'top',
+            offset: [0, -10]
+          })
+          .bindPopup(popupContent);
       });
     }
 
@@ -120,31 +176,108 @@ const Map = () => {
       if (!s.latitude || !s.longitude) return;
       const color = getColorByStatus(s.status);
       const icon = createCustomIcon(color);
-      L.marker([s.latitude, s.longitude], { icon })
-        .addTo(map)
-        .bindPopup(`
-          <div style="min-width:200px;font-family:system-ui;">
-            <h3 style="margin:0 0 8px 0;font-size:16px;font-weight:bold;color:#1f2937;">
-              Signalement
-            </h3>
-            <p style="margin:0 0 8px 0;color:#4b5563;font-size:13px;">
-              ${s.description || "Pas de description"}
-            </p>
-            <div style="background:#f3f4f6;padding:8px;border-radius:6px;">
-              <div style="display:flex;justify-content:space-between;">
-                <span style="font-weight:600;color:#374151;">Statut:</span>
-                <span style="
-                  background:${color};
-                  color:white;
-                  padding:2px 8px;
-                  border-radius:12px;
-                  font-size:12px;
-                  font-weight:500;
-                ">${getStatusText(s.status)}</span>
+      
+      // Formatter la date
+      const dateCreation = s.createdAt?.toDate 
+        ? s.createdAt.toDate().toLocaleDateString('fr-FR')
+        : s.createdAt
+        ? new Date(s.createdAt).toLocaleDateString('fr-FR')
+        : 'Non renseignée';
+      
+      // Créer le tooltip au survol
+      const tooltipContent = `
+        <div style="font-family:system-ui;font-size:12px;padding:4px;">
+          <strong style="color:#1f2937;">Signalement</strong><br/>
+          <span style="color:#6b7280;">📅 ${dateCreation}</span><br/>
+          <span style="padding:1px 6px;background:${color};color:white;border-radius:8px;font-size:11px;">
+            ${getStatusText(s.status)}
+          </span>
+        </div>
+      `;
+      
+      // Créer le popup détaillé au clic
+      const popupContent = `
+        <div style="min-width:250px;font-family:system-ui;">
+          <h3 style="margin:0 0 10px 0;font-size:16px;font-weight:bold;color:#1f2937;">
+            📍 Signalement
+          </h3>
+          <p style="margin:0 0 12px 0;color:#4b5563;font-size:13px;">
+            ${s.description || "Pas de description"}
+          </p>
+          <div style="background:#f3f4f6;padding:10px;border-radius:8px;">
+            <div style="display:grid;gap:6px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-weight:600;color:#374151;">📅 Date:</span>
+                <span style="color:#1f2937;font-size:13px;">${dateCreation}</span>
               </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-weight:600;color:#374151;">📊 Statut:</span>
+                <span style="background:${color};color:white;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:500;">
+                  ${getStatusText(s.status)}
+                </span>
+              </div>
+              ${s.surfaceM2 ? `
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-weight:600;color:#374151;">📐 Surface:</span>
+                <span style="color:#1f2937;font-size:13px;">${s.surfaceM2} m²</span>
+              </div>
+              ` : ''}
+              ${s.budget ? `
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-weight:600;color:#374151;">💰 Budget:</span>
+                <span style="color:#1f2937;font-size:13px;">${s.budget.toLocaleString('fr-FR')} Ar</span>
+              </div>
+              ` : ''}
+              ${s.userEmail ? `
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-weight:600;color:#374151;">👤 Utilisateur:</span>
+                <span style="color:#1f2937;font-size:13px;">${s.userEmail}</span>
+              </div>
+              ` : ''}
+              ${s.niveauReparation ? `
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-weight:600;color:#374151;">⚡ Niveau:</span>
+                <span style="padding:2px 8px;background:${
+                  s.niveauReparation <= 3 ? '#22c55e' : 
+                  s.niveauReparation <= 6 ? '#f59e0b' : 
+                  s.niveauReparation <= 8 ? '#fb923c' : '#ef4444'
+                };color:white;border-radius:12px;font-size:12px;font-weight:500;">
+                  ${s.niveauReparation}/10
+                </span>
+              </div>
+              ` : ''}
             </div>
           </div>
-        `);
+          ${s.photoUrls && s.photoUrls.length > 0 ? `
+          <div style="margin-top:12px;">
+            <div style="font-weight:600;color:#374151;margin-bottom:8px;">📷 Photos (${s.photoUrls.length}):</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;max-height:300px;overflow-y:auto;">
+              ${s.photoUrls.map((photoUrl, index) => `
+                <div style="position:relative;">
+                  <img src="${photoUrl}" 
+                       alt="Photo ${index + 1}" 
+                       style="width:100%;height:120px;object-fit:cover;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);cursor:pointer;" 
+                       onclick="window.open('${photoUrl}', '_blank')" 
+                       onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+                  <div style="display:none;align-items:center;justify-content:center;width:100%;height:120px;padding:8px;background:#fee;color:#c00;border-radius:8px;font-size:11px;text-align:center;">
+                    ⚠️ Erreur
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          ` : ''}
+        </div>
+      `;
+      
+      L.marker([s.latitude, s.longitude], { icon })
+        .addTo(map)
+        .bindTooltip(tooltipContent, {
+          permanent: false,
+          direction: 'top',
+          offset: [0, -10]
+        })
+        .bindPopup(popupContent);
     });
   }, [signalements, loadingSignalements]);
 
