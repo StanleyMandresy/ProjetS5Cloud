@@ -1,0 +1,374 @@
+{
+	"info": {
+		"_postman_id": "signalisation-mobile-firebase-api",
+		"name": "Signalisation Mobile - Firebase API",
+		"description": "Collection pour tester les APIs Firebase du projet signalisation-mobile\n\nProjet Firebase: signalisation-s5\n\nCes APIs sont les equivalents REST des appels SDK Firebase utilises dans l'app mobile.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "apiKey",
+			"value": "AIzaSyBCajuBJbaEVFop9GbKetSbssS2XDbetws",
+			"type": "string"
+		},
+		{
+			"key": "projectId",
+			"value": "signalisation-s5",
+			"type": "string"
+		},
+		{
+			"key": "idToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "localId",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "1. FIREBASE AUTH",
+			"description": "Authentification Firebase - Equivalent du SDK auth",
+			"item": [
+				{
+					"name": "Sign Up (Inscription)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.idToken) {",
+									"    pm.collectionVariables.set('idToken', jsonData.idToken);",
+									"    pm.collectionVariables.set('localId', jsonData.localId);",
+									"    console.log('idToken et localId sauvegardes!');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\",\n  \"returnSecureToken\": true\n}"
+						},
+						"url": {
+							"raw": "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={{apiKey}}",
+							"protocol": "https",
+							"host": ["identitytoolkit", "googleapis", "com"],
+							"path": ["v1", "accounts:signUp"],
+							"query": [
+								{
+									"key": "key",
+									"value": "{{apiKey}}"
+								}
+							]
+						},
+						"description": "Creer un nouveau compte Firebase Auth\n\nEquivalent de: createUserWithEmailAndPassword(auth, email, password)\n\nRetourne idToken (JWT) et localId (userId)"
+					},
+					"response": []
+				},
+				{
+					"name": "Sign In (Connexion)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.idToken) {",
+									"    pm.collectionVariables.set('idToken', jsonData.idToken);",
+									"    pm.collectionVariables.set('localId', jsonData.localId);",
+									"    console.log('idToken et localId sauvegardes!');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\",\n  \"returnSecureToken\": true\n}"
+						},
+						"url": {
+							"raw": "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={{apiKey}}",
+							"protocol": "https",
+							"host": ["identitytoolkit", "googleapis", "com"],
+							"path": ["v1", "accounts:signInWithPassword"],
+							"query": [
+								{
+									"key": "key",
+									"value": "{{apiKey}}"
+								}
+							]
+						},
+						"description": "Se connecter avec email/password\n\nEquivalent de: signInWithEmailAndPassword(auth, email, password)\n\nRetourne idToken (JWT) a utiliser pour les appels Firestore"
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Info",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idToken\": \"{{idToken}}\"\n}"
+						},
+						"url": {
+							"raw": "https://identitytoolkit.googleapis.com/v1/accounts:lookup?key={{apiKey}}",
+							"protocol": "https",
+							"host": ["identitytoolkit", "googleapis", "com"],
+							"path": ["v1", "accounts:lookup"],
+							"query": [
+								{
+									"key": "key",
+									"value": "{{apiKey}}"
+								}
+							]
+						},
+						"description": "Recuperer les infos de l'utilisateur connecte\n\nEquivalent de: auth.currentUser"
+					},
+					"response": []
+				},
+				{
+					"name": "Send Password Reset Email",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"requestType\": \"PASSWORD_RESET\",\n  \"email\": \"test@example.com\"\n}"
+						},
+						"url": {
+							"raw": "https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key={{apiKey}}",
+							"protocol": "https",
+							"host": ["identitytoolkit", "googleapis", "com"],
+							"path": ["v1", "accounts:sendOobCode"],
+							"query": [
+								{
+									"key": "key",
+									"value": "{{apiKey}}"
+								}
+							]
+						},
+						"description": "Envoyer un email de reinitialisation de mot de passe\n\nEquivalent de: sendPasswordResetEmail(auth, email)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "2. FIRESTORE - REPORTS",
+			"description": "Collection 'reports' - Signalements avec photos",
+			"item": [
+				{
+					"name": "Get All Reports",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{idToken}}"
+							}
+						],
+						"url": {
+							"raw": "https://firestore.googleapis.com/v1/projects/{{projectId}}/databases/(default)/documents/reports",
+							"protocol": "https",
+							"host": ["firestore", "googleapis", "com"],
+							"path": ["v1", "projects", "{{projectId}}", "databases", "(default)", "documents", "reports"]
+						},
+						"description": "Recuperer tous les signalements\n\nEquivalent de: getDocs(collection(db, 'reports'))"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Single Report",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{idToken}}"
+							}
+						],
+						"url": {
+							"raw": "https://firestore.googleapis.com/v1/projects/{{projectId}}/databases/(default)/documents/reports/{documentId}",
+							"protocol": "https",
+							"host": ["firestore", "googleapis", "com"],
+							"path": ["v1", "projects", "{{projectId}}", "databases", "(default)", "documents", "reports", "{documentId}"]
+						},
+						"description": "Recuperer un signalement par son ID\n\nRemplacez {documentId} par l'ID du document\n\nEquivalent de: getDoc(doc(db, 'reports', documentId))"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Report",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{idToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fields\": {\n    \"latitude\": { \"doubleValue\": -18.9400 },\n    \"longitude\": { \"doubleValue\": 47.5253 },\n    \"description\": { \"stringValue\": \"Nid de poule dangereux\" },\n    \"status\": { \"stringValue\": \"NOUVEAU\" },\n    \"userId\": { \"stringValue\": \"{{localId}}\" },\n    \"userEmail\": { \"stringValue\": \"test@example.com\" },\n    \"photoUrls\": {\n      \"arrayValue\": {\n        \"values\": []\n      }\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "https://firestore.googleapis.com/v1/projects/{{projectId}}/databases/(default)/documents/reports",
+							"protocol": "https",
+							"host": ["firestore", "googleapis", "com"],
+							"path": ["v1", "projects", "{{projectId}}", "databases", "(default)", "documents", "reports"]
+						},
+						"description": "Creer un nouveau signalement\n\nEquivalent de: addDoc(collection(db, 'reports'), data)\n\nNote: Le format Firestore REST utilise des types explicites (stringValue, doubleValue, etc.)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Report Status",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{idToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fields\": {\n    \"status\": { \"stringValue\": \"EN_COURS\" }\n  }\n}"
+						},
+						"url": {
+							"raw": "https://firestore.googleapis.com/v1/projects/{{projectId}}/databases/(default)/documents/reports/{documentId}?updateMask.fieldPaths=status",
+							"protocol": "https",
+							"host": ["firestore", "googleapis", "com"],
+							"path": ["v1", "projects", "{{projectId}}", "databases", "(default)", "documents", "reports", "{documentId}"],
+							"query": [
+								{
+									"key": "updateMask.fieldPaths",
+									"value": "status"
+								}
+							]
+						},
+						"description": "Mettre a jour le statut d'un signalement\n\nRemplacez {documentId} par l'ID du document\n\nStatuts: NOUVEAU, EN_COURS, RESOLU"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Report",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{idToken}}"
+							}
+						],
+						"url": {
+							"raw": "https://firestore.googleapis.com/v1/projects/{{projectId}}/databases/(default)/documents/reports/{documentId}",
+							"protocol": "https",
+							"host": ["firestore", "googleapis", "com"],
+							"path": ["v1", "projects", "{{projectId}}", "databases", "(default)", "documents", "reports", "{documentId}"]
+						},
+						"description": "Supprimer un signalement\n\nRemplacez {documentId} par l'ID du document"
+					},
+					"response": []
+				},
+				{
+					"name": "Query Reports by Status",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{idToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"structuredQuery\": {\n    \"from\": [{ \"collectionId\": \"reports\" }],\n    \"where\": {\n      \"fieldFilter\": {\n        \"field\": { \"fieldPath\": \"status\" },\n        \"op\": \"EQUAL\",\n        \"value\": { \"stringValue\": \"NOUVEAU\" }\n      }\n    },\n    \"orderBy\": [{\n      \"field\": { \"fieldPath\": \"createdAt\" },\n      \"direction\": \"DESCENDING\"\n    }]\n  }\n}"
+						},
+						"url": {
+							"raw": "https://firestore.googleapis.com/v1/projects/{{projectId}}/databases/(default)/documents:runQuery",
+							"protocol": "https",
+							"host": ["firestore", "googleapis", "com"],
+							"path": ["v1", "projects", "{{projectId}}", "databases", "(default)", "documents:runQuery"]
+						},
+						"description": "Requete filtree - tous les signalements avec statut NOUVEAU\n\nEquivalent de: query(collection(db, 'reports'), where('status', '==', 'NOUVEAU'))"
+					},
+					"response": []
+				},
+				{
+					"name": "Query My Reports",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{idToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"structuredQuery\": {\n    \"from\": [{ \"collectionId\": \"reports\" }],\n    \"where\": {\n      \"fieldFilter\": {\n        \"field\": { \"fieldPath\": \"userId\" },\n        \"op\": \"EQUAL\",\n        \"value\": { \"stringValue\": \"{{localId}}\" }\n      }\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "https://firestore.googleapis.com/v1/projects/{{projectId}}/databases/(default)/documents:runQuery",
+							"protocol": "https",
+							"host": ["firestore", "googleapis", "com"],
+							"path": ["v1", "projects", "{{projectId}}", "databases", "(default)", "documents:runQuery"]
+						},
+						"description": "Recuperer mes signalements uniquement\n\nEquivalent de: query(collection(db, 'reports'), where('userId', '==', currentUser.uid))"
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

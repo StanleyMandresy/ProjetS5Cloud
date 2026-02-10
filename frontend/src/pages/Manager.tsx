@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTravaux } from '../context/TravauxContext';
 import { travauxService } from '../services/travaux.service';
 import etapesService from '../services/etapes.service';
-import { signalementService } from '../services/signalement.service';
+
 import configurationService from '../services/configuration.service';
 import type { CreateTravailRequest, UpdateTravailRequest, Statistiques, StatistiquesTraitement } from '../types/travaux.types';
 import type { EtapeTravaux, CreateEtapeRequest } from '../types/etapes.types';

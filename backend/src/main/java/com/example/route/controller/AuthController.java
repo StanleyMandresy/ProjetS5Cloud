@@ -34,17 +34,13 @@ public class AuthController {
     private final CustomUserDetailsService userDetailsService;
     private final LoginAttemptRepository loginAttemptRepository;
     private final UtilisateurRepository utilisateurRepository;
-    
-    public AuthController(AuthService authService, CustomUserDetailsService userDetailsService, LoginAttemptRepository loginAttemptRepository, UtilisateurRepository utilisateurRepository) {
+    private final UserFcmTokenRepository repo;
+
+    public AuthController(AuthService authService, CustomUserDetailsService userDetailsService, LoginAttemptRepository loginAttemptRepository, UtilisateurRepository utilisateurRepository, UserFcmTokenRepository repo) {
         this.authService = authService;
         this.userDetailsService = userDetailsService;
         this.loginAttemptRepository = loginAttemptRepository;
         this.utilisateurRepository = utilisateurRepository;
-    private final UserFcmTokenRepository repo;
-    
-    public AuthController(AuthService authService, CustomUserDetailsService userDetailsService, UserFcmTokenRepository repo) {
-        this.authService = authService;
-        this.userDetailsService = userDetailsService;
         this.repo = repo;
     }
     
