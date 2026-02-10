@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -15,6 +16,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
 import com.example.route.service.CustomUserDetailsService;
@@ -22,12 +24,17 @@ import com.example.route.service.JwtService;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
+    private final JwtService jwtService;
+    private final CorsConfigurationSource corsConfigurationSource;
 
-    public SecurityConfig(CustomUserDetailsService userDetailsService) {
+    public SecurityConfig(CustomUserDetailsService userDetailsService, JwtService jwtService, CorsConfigurationSource corsConfigurationSource) {
         this.userDetailsService = userDetailsService;
+        this.jwtService = jwtService;
+        this.corsConfigurationSource = corsConfigurationSource;
     }
 
     /* =========================
@@ -50,7 +57,11 @@ public class SecurityConfig {
                     mvc.pattern("/home"),
                     mvc.pattern("/css/**"),
                     mvc.pattern("/js/**"),
-                    mvc.pattern("/images/**")
+                    mvc.pattern("/images/**"),
+                    // Swagger UI
+                    mvc.pattern("/swagger-ui/**"),
+                    mvc.pattern("/v3/api-docs/**"),
+                    mvc.pattern("/swagger-ui.html")
                 )
             )
             .csrf(AbstractHttpConfigurer::disable)
@@ -80,16 +91,43 @@ public class SecurityConfig {
 
         http
             .securityMatcher(new AntPathRequestMatcher("/api/**"))
+            .cors(cors -> cors.configurationSource(corsConfigurationSource))
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(new AntPathRequestMatcher("/api/auth/**")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/api/travaux/points")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/api/travaux/points/**")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/api/travaux/points/statut/**")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/api/etapes/**")).permitAll()
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(
-                new JwtAuthenticationFilter(new JwtService(), userDetailsService),
+                new JwtAuthenticationFilter(jwtService, userDetailsService),
                 UsernamePasswordAuthenticationFilter.class
+            );
+
+        return http.build();
+    }
+    
+    /* =========================
+       CHAIN 3 : Swagger/OpenAPI (Public)
+       ========================= */
+    @Bean
+    @Order(3)
+    public SecurityFilterChain swaggerSecurity(HttpSecurity http) throws Exception {
+        http
+            .securityMatcher(
+                new org.springframework.security.web.util.matcher.OrRequestMatcher(
+                    new AntPathRequestMatcher("/v3/api-docs/**"),
+                    new AntPathRequestMatcher("/swagger-ui/**"),
+                    new AntPathRequestMatcher("/swagger-ui.html")
+                )
+            )
+            .csrf(AbstractHttpConfigurer::disable)
+            .authorizeHttpRequests(auth -> auth
+                .anyRequest().permitAll()
             );
 
         return http.build();

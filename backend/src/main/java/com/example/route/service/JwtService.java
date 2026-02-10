@@ -4,13 +4,14 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import com.example.route.model.User;
-
+import com.example.route.model.Utilisateur;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,18 +19,21 @@ import java.util.function.Function;
 
 @Service
 public class JwtService {
-    private final SecretKey secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    // Secret key fixe pour la génération du JWT
+    private final SecretKey secretKey;
     private final long jwtExpiration = 86400000; // 24 heures en millisecondes
     
-    public String generateToken(User user) {
+    public JwtService(@Value("${jwt.secret:mySecretKeyForJWTTokenGenerationThatIsLongEnoughForHS256Algorithm}") String secret) {
+        this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    }
+    
+    public String generateToken(Utilisateur user) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("userId", user.getId());
-        claims.put("username", user.getUsername());
+        claims.put("userId", user.getIdUtilisateur());
+        claims.put("username", user.getNom());
         claims.put("email", user.getEmail());
-
-
         
-        return createToken(claims, user.getUsername());
+        return createToken(claims, user.getNom());
     }
     
     private String createToken(Map<String, Object> claims, String subject) {

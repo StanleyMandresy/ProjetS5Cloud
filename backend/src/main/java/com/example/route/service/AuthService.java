@@ -5,50 +5,51 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
+
 import com.example.route.model.User;
 
 import com.example.route.repository.UserRepository;
 
+import com.example.route.model.Utilisateur;
+import com.example.route.repository.UtilisateurRepository;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @Service
 public class AuthService {
-    public final UserRepository userRepository;
+    public final UtilisateurRepository utilisateurRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
     
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
-        this.userRepository = userRepository;
+    public AuthService(UtilisateurRepository utilisateurRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
+        this.utilisateurRepository = utilisateurRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
-
     }
-     @Transactional
+    
+    @Transactional
     public Map<String, Object> register(String username, String email, String password, String roleName) {
         // Vérifier si l'utilisateur existe déjà
-        if (userRepository.existsByUsername(username)) {
+        if (utilisateurRepository.existsByNom(username)) {
             throw new RuntimeException("Le nom d'utilisateur existe déjà");
         }
         
-        if (userRepository.existsByEmail(email)) {
+        if (utilisateurRepository.existsByEmail(email)) {
             throw new RuntimeException("L'email existe déjà");
         }
 
-        
         // Créer un nouvel utilisateur
-        User user = new User();
-        user.setUsername(username);
+        Utilisateur user = new Utilisateur();
+        user.setNom(username);
         user.setEmail(email);
-        user.setPasswordHash(passwordEncoder.encode(password));
+        user.setMotDePasse(passwordEncoder.encode(password));
+        user.setRole("USER");
         user.setIsActive(true);
         
         // Sauvegarder l'utilisateur
-        User savedUser = userRepository.save(user);
-        
-   
+        Utilisateur savedUser = utilisateurRepository.save(user);
         
         // Générer le token JWT
         String token = jwtService.generateToken(savedUser);
@@ -56,32 +57,24 @@ public class AuthService {
         // Préparer la réponse
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Inscription réussie");
-        response.put("userId", savedUser.getId());
-        response.put("username", savedUser.getUsername());
+        response.put("userId", savedUser.getIdUtilisateur().longValue());
+        response.put("username", savedUser.getNom());
         response.put("email", savedUser.getEmail());
-
         response.put("token", token);
+        response.put("role", savedUser.getRole());
         
         return response;
     }
     
     public Map<String, Object> login(String username, String password) {
         // Rechercher l'utilisateur
-        User user = userRepository.findByUsername(username)
+        Utilisateur user = utilisateurRepository.findByNom(username)
                 .orElseThrow(() -> new RuntimeException("Nom d'utilisateur ou mot de passe incorrect"));
         
-        // Vérifier si le compte est actif
-        if (!user.getIsActive()) {
-            throw new RuntimeException("Le compte est désactivé");
-        }
-        
         // Vérifier le mot de passe
-        if (!passwordEncoder.matches(password, user.getPasswordHash())) {
+        if (!passwordEncoder.matches(password, user.getMotDePasse())) {
             throw new RuntimeException("Nom d'utilisateur ou mot de passe incorrect, veuillez réessayer");
         }
-        
-        // Récupérer le rôle de l'utilisateur
-   
         
         // Générer le token JWT
         String token = jwtService.generateToken(user);
@@ -89,14 +82,70 @@ public class AuthService {
         // Préparer la réponse
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Connexion réussie");
-        response.put("userId", user.getId());
-        response.put("username", user.getUsername());
+        response.put("userId", user.getIdUtilisateur().longValue());
+        response.put("username", user.getNom());
         response.put("email", user.getEmail());
-
         response.put("token", token);
+        response.put("role", user.getRole());
         
         return response;
     }
     
-   
+    @Transactional
+    public Map<String, Object> updateUser(Integer userId, String username, String email, String currentPassword, String newPassword) {
+        // Rechercher l'utilisateur
+        Utilisateur user = utilisateurRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+        
+        // Si le mot de passe doit être changé, vérifier l'ancien mot de passe
+        if (newPassword != null && !newPassword.isEmpty()) {
+            if (currentPassword == null || currentPassword.isEmpty()) {
+                throw new RuntimeException("Le mot de passe actuel est requis pour changer le mot de passe");
+            }
+            
+            if (!passwordEncoder.matches(currentPassword, user.getMotDePasse())) {
+                throw new RuntimeException("Le mot de passe actuel est incorrect");
+            }
+            
+            user.setMotDePasse(passwordEncoder.encode(newPassword));
+        }
+        
+        // Mettre à jour le nom d'utilisateur si fourni
+        if (username != null && !username.isEmpty() && !username.equals(user.getNom())) {
+            if (utilisateurRepository.existsByNom(username)) {
+                throw new RuntimeException("Ce nom d'utilisateur est déjà utilisé");
+            }
+            user.setNom(username);
+        }
+        
+        // Mettre à jour l'email si fourni
+        if (email != null && !email.isEmpty() && !email.equals(user.getEmail())) {
+            if (utilisateurRepository.existsByEmail(email)) {
+                throw new RuntimeException("Cet email est déjà utilisé");
+            }
+            user.setEmail(email);
+        }
+        
+        // Sauvegarder les modifications
+        Utilisateur updatedUser = utilisateurRepository.save(user);
+        
+        // Générer un nouveau token avec les nouvelles informations
+        String token = jwtService.generateToken(updatedUser);
+        
+        // Préparer la réponse
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Profil mis à jour avec succès");
+        response.put("userId", updatedUser.getIdUtilisateur().longValue());
+        response.put("username", updatedUser.getNom());
+        response.put("email", updatedUser.getEmail());
+        response.put("token", token);
+        response.put("role", updatedUser.getRole());
+        
+        return response;
+    }
+    
+    public Utilisateur getUserById(Integer userId) {
+        return utilisateurRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+    }
 }

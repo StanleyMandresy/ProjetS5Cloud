@@ -310,6 +310,7 @@ Un administrateur change le statut depuis le dashboard web.
 - [ ] Ajouter `google-services.json` depuis Firebase Console
 - [ ] Personnaliser le son des notifications
 - [ ] Ajouter une page d'historique des notifications
+<<<<<<< HEAD
 
 
 ============================================================
@@ -408,3 +409,5 @@ npx vite --port 8100
 - Limite : 1 MB par document Firestore = 3-5 photos compressees max
 - Compression : 800px max, JPEG qualite 50% (~50-150 KB par photo)
 ============================================================
+=======
+>>>>>>> staging

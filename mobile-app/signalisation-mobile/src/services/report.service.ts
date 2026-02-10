@@ -16,7 +16,10 @@ interface Report {
   createdAt: any
   userId: string
   userEmail: string | null
+<<<<<<< HEAD
   photoUrls?: string[] // base64 des photos stockees dans Firestore
+=======
+>>>>>>> staging
 }
 
 class ReportService {
@@ -29,7 +32,10 @@ class ReportService {
     latitude: string
     longitude: string
     description?: string
+<<<<<<< HEAD
     photoUrls?: string[]
+=======
+>>>>>>> staging
   }) {
     const user = auth.currentUser
 
@@ -44,8 +50,12 @@ class ReportService {
       status: 'NOUVEAU',
       createdAt: serverTimestamp(),
       userId: user.uid,
+<<<<<<< HEAD
       userEmail: user.email,
       photoUrls: data.photoUrls || []
+=======
+      userEmail: user.email
+>>>>>>> staging
     })
   }
 

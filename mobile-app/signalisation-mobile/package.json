@@ -14,7 +14,10 @@
   "dependencies": {
     "@capacitor/android": "8.0.1",
     "@capacitor/app": "8.0.0",
+<<<<<<< HEAD
     "@capacitor/camera": "^8.0.0",
+=======
+>>>>>>> staging
     "@capacitor/core": "8.0.1",
     "@capacitor/haptics": "8.0.0",
     "@capacitor/keyboard": "8.0.0",
