@@ -9,7 +9,8 @@ import type { HistoriqueEtape } from '../types/historique.types';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import { useSignalements } from '../context/SignalementContext';
-
+import { signalementService, type Signalement } from '../services/signalement.service';
+import { notificationService } from "../services/notification.service"
 import {
   Plus,
   Edit,
@@ -27,6 +28,7 @@ import {
 } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+
 
 const Manager: React.FC = () => {
   const { user } = useAuth();
@@ -226,6 +228,17 @@ const Manager: React.FC = () => {
       setSelectedDate('');
     }
   };
+
+  const convertirSignalement = async (s: Signalement) => {
+  try {
+    await signalementService.convertirEnPoint(s)
+    await refresh()           // recharge travaux
+    await syncSignalements()  // recharge signalements
+    alert('Signalement converti avec succès')
+  } catch (e) {
+    alert('Erreur lors de la conversion')
+  }
+}
 
   const initMap = () => {
     setTimeout(() => {
@@ -886,6 +899,13 @@ const Manager: React.FC = () => {
                           {new Date(s.createdAt).toLocaleDateString()}
                         </span>
                       )}
+                    <button
+                      onClick={() => convertirSignalement(s)}
+                      className="px-3 py-2 bg-green-600 text-white rounded-lg"
+                    >
+                      Créer point
+                    </button>
+
                     </div>
                   </div>
 
