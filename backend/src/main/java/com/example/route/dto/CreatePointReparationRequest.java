@@ -22,6 +22,8 @@ public class CreatePointReparationRequest {
     
     private BigDecimal budget;
     
+    private Integer niveauReparation;
+    
     private Integer entrepriseId;
     
     // Constructeurs
@@ -82,6 +84,14 @@ public class CreatePointReparationRequest {
     
     public void setBudget(BigDecimal budget) {
         this.budget = budget;
+    }
+    
+    public Integer getNiveauReparation() {
+        return niveauReparation;
+    }
+    
+    public void setNiveauReparation(Integer niveauReparation) {
+        this.niveauReparation = niveauReparation;
     }
     
     public Integer getEntrepriseId() {

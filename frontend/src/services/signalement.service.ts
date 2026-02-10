@@ -15,6 +15,7 @@ export type Signalement = {
   budget?: number
   linkedTravauxId?: number
   userId?: string
+  niveauReparation?: number // Niveau de priorité de 1 à 10
 }
 
 export const signalementService = {
@@ -44,11 +45,26 @@ export const signalementService = {
           surfaceM2: data.surfaceM2,
           budget: data.budget,
           linkedTravauxId: data.linkedTravauxId,
-          userId: data.userId
+          userId: data.userId,
+          niveauReparation: data.niveauReparation
         }
       })
     } catch (error) {
       console.error("Erreur lors de la récupération des signalements:", error)
+      throw error
+    }
+  },
+
+  async updateNiveauReparation(id: string, niveau: number): Promise<void> {
+    try {
+      const { doc, updateDoc } = await import("firebase/firestore")
+      const docRef = doc(db, "reports", id)
+      await updateDoc(docRef, {
+        niveauReparation: niveau
+      })
+      console.log(`Niveau de réparation mis à jour: ${niveau}`)
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour du niveau:", error)
       throw error
     }
   }

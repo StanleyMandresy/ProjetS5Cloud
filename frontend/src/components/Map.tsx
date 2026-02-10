@@ -117,6 +117,18 @@ const Map = () => {
                   <span style="color:#1f2937;font-size:13px;">${t.entrepriseNom}</span>
                 </div>
                 ` : ''}
+                ${t.niveauReparation ? `
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span style="font-weight:600;color:#374151;">⚡ Niveau:</span>
+                  <span style="padding:2px 8px;background:${
+                    t.niveauReparation <= 3 ? '#22c55e' : 
+                    t.niveauReparation <= 6 ? '#f59e0b' : 
+                    t.niveauReparation <= 8 ? '#fb923c' : '#ef4444'
+                  };color:white;border-radius:12px;font-size:12px;font-weight:500;">
+                    ${t.niveauReparation}/10
+                  </span>
+                </div>
+                ` : ''}
               </div>
             </div>
           </div>
@@ -220,6 +232,18 @@ const Map = () => {
               <div style="display:flex;justify-content:space-between;align-items:center;">
                 <span style="font-weight:600;color:#374151;">👤 Utilisateur:</span>
                 <span style="color:#1f2937;font-size:13px;">${s.userEmail}</span>
+              </div>
+              ` : ''}
+              ${s.niveauReparation ? `
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-weight:600;color:#374151;">⚡ Niveau:</span>
+                <span style="padding:2px 8px;background:${
+                  s.niveauReparation <= 3 ? '#22c55e' : 
+                  s.niveauReparation <= 6 ? '#f59e0b' : 
+                  s.niveauReparation <= 8 ? '#fb923c' : '#ef4444'
+                };color:white;border-radius:12px;font-size:12px;font-weight:500;">
+                  ${s.niveauReparation}/10
+                </span>
               </div>
               ` : ''}
             </div>

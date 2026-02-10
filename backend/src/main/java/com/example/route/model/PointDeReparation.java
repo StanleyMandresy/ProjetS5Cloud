@@ -37,6 +37,9 @@ public class PointDeReparation {
     @Column
     private BigDecimal budget;
     
+    @Column(name = "niveau_reparation")
+    private Integer niveauReparation;
+    
     @Column(columnDefinition = "geometry(Geometry,4326)")
     private Geometry geom;
     
@@ -132,6 +135,14 @@ public class PointDeReparation {
     
     public void setBudget(BigDecimal budget) {
         this.budget = budget;
+    }
+    
+    public Integer getNiveauReparation() {
+        return niveauReparation;
+    }
+    
+    public void setNiveauReparation(Integer niveauReparation) {
+        this.niveauReparation = niveauReparation;
     }
     
     public Geometry getGeom() {
