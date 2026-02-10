@@ -136,6 +136,11 @@
                   <span class="meta-icon">👤</span>
                   <span class="meta-text owner-badge">Mon signalement</span>
                 </div>
+
+                <div class="meta-item" v-if="report.photoUrls && report.photoUrls.length > 0">
+                  <span class="meta-icon">📸</span>
+                  <span class="meta-text photo-badge">{{ report.photoUrls.length }} photo(s)</span>
+                </div>
               </div>
             </div>
 
@@ -570,6 +575,11 @@ const formatStatus = (status: string) => {
 
 .owner-badge {
   color: #10B981;
+  font-weight: 600;
+}
+
+.photo-badge {
+  color: #F59E0B;
   font-weight: 600;
 }
 

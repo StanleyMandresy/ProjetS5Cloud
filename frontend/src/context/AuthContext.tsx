@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authService } from '../services/auth.service';
+import { userSyncService } from '../services/userSync.service';
+import { localDBService } from '../services/localDB.service';
 import type { AuthResponse, User, LoginRequest, RegisterRequest } from '../types/auth.types';
 
 interface AuthContextType {
@@ -7,10 +9,12 @@ interface AuthContextType {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  unsyncedUsersCount: number;
   login: (credentials: LoginRequest) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => void;
   updateUser: (user: User) => void;
+  syncPendingUsers: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,6 +35,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [unsyncedUsersCount, setUnsyncedUsersCount] = useState(0);
+
+  // Fonction pour mettre à jour le compteur d'utilisateurs non synchronisés
+  const updateUnsyncedCount = async () => {
+    try {
+      const count = await localDBService.countUnsyncedUsers();
+      setUnsyncedUsersCount(count);
+    } catch (error) {
+      console.error('Erreur lors du comptage des utilisateurs non synchronisés:', error);
+    }
+  };
 
   useEffect(() => {
     // Charger l'utilisateur depuis le localStorage au démarrage
@@ -41,8 +56,46 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setToken(storedToken);
       setUser(JSON.parse(storedUser));
     }
+    
+    // Initialiser le compteur d'utilisateurs non synchronisés
+    updateUnsyncedCount();
+    
     setIsLoading(false);
   }, []);
+
+  // Écouter les changements de statut réseau
+  useEffect(() => {
+    const handleOnline = async () => {
+      console.log('🌐 Connexion rétablie - Tentative de synchronisation automatique');
+      try {
+        const count = await localDBService.countUnsyncedUsers();
+        if (count > 0) {
+          await syncPendingUsers();
+        }
+      } catch (error) {
+        console.error('Erreur lors de la synchronisation automatique:', error);
+      }
+    };
+
+    window.addEventListener('online', handleOnline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+    };
+  }, []);
+
+  // Fonction pour synchroniser les utilisateurs en attente
+  const syncPendingUsers = async () => {
+    try {
+      console.log('🔄 Synchronisation des utilisateurs en attente...');
+      await userSyncService.syncAllPendingUsers();
+      await updateUnsyncedCount();
+      console.log('✅ Synchronisation terminée');
+    } catch (error) {
+      console.error('❌ Erreur lors de la synchronisation:', error);
+      throw error;
+    }
+  };
 
   const login = async (credentials: LoginRequest) => {
     try {
@@ -106,10 +159,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     token,
     isAuthenticated: !!token,
     isLoading,
+    unsyncedUsersCount,
     login,
     register,
     logout,
     updateUser,
+    syncPendingUsers,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
