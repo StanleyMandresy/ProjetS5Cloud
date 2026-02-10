@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
@@ -7,11 +8,10 @@ import Register from './pages/Register';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
 import Manager from './pages/Manager';
+import BlockedUsers from './pages/BlockedUsers';
+import { OfflineUserDemo } from './pages/OfflineUserDemo';
 import { TravauxProvider } from "./context/TravauxContext";
-
 import { SignalementProvider } from './context/SignalementContext';
-
-
 
 import './App.css';
 
@@ -24,6 +24,7 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/offline-demo" element={<OfflineUserDemo />} />
           <Route
             path="/"
             element={
@@ -45,6 +46,14 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute>
                 <Manager />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/blocked-users"
+            element={
+              <ProtectedRoute>
+                <BlockedUsers />
               </ProtectedRoute>
             }
           />

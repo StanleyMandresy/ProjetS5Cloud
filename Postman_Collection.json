@@ -1,0 +1,541 @@
+{
+	"info": {
+		"_postman_id": "projet-s5-cloud-api",
+		"name": "Projet S5 Cloud - API Collection",
+		"description": "Collection complète des APIs du projet de gestion des points de réparation routière",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8081/api",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nom\": \"Dupont\",\n  \"prenom\": \"Jean\",\n  \"email\": \"jean.dupont@example.com\",\n  \"motDePasse\": \"Password123!\",\n  \"role\": \"MANAGER\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "register"]
+						},
+						"description": "Créer un nouveau compte utilisateur. Roles disponibles: MANAGER, UTILISATEUR"
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"token\", jsonData.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"jean.dupont@example.com\",\n  \"motDePasse\": \"Password123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "login"]
+						},
+						"description": "Connexion avec email et mot de passe. Retourne un token JWT qui sera automatiquement stocké."
+					},
+					"response": []
+				}
+			],
+			"description": "APIs d'authentification et gestion de compte"
+		},
+		{
+			"name": "Points de Réparation",
+			"item": [
+				{
+					"name": "Get All Points",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/travaux/points",
+							"host": ["{{baseUrl}}"],
+							"path": ["travaux", "points"]
+						},
+						"description": "Récupérer tous les points de réparation avec leurs détails complets"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Point by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/travaux/points/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["travaux", "points", "1"]
+						},
+						"description": "Récupérer un point de réparation spécifique par son ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Points by Status",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/travaux/points/statut/EN_COURS",
+							"host": ["{{baseUrl}}"],
+							"path": ["travaux", "points", "statut", "EN_COURS"]
+						},
+						"description": "Filtrer les points par statut (NOUVEAU, EN_COURS, TERMINE)"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Point",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"titre\": \"Réparation route principale\",\n  \"description\": \"Nids de poule à réparer\",\n  \"latitude\": -18.8792,\n  \"longitude\": 47.5079,\n  \"statut\": \"NOUVEAU\",\n  \"surfaceM2\": 150.5,\n  \"niveauReparation\": 5,\n  \"entrepriseId\": 1\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/travaux/points",
+							"host": ["{{baseUrl}}"],
+							"path": ["travaux", "points"]
+						},
+						"description": "Créer un nouveau point de réparation. Le budget sera calculé automatiquement si surface et niveau sont fournis."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Point",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"titre\": \"Réparation route principale - Mise à jour\",\n  \"statut\": \"EN_COURS\",\n  \"dateDebutTravaux\": \"2026-02-10\",\n  \"surfaceM2\": 200,\n  \"niveauReparation\": 7\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/travaux/points/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["travaux", "points", "1"]
+						},
+						"description": "Mettre à jour un point de réparation existant. Le budget sera recalculé si surface ou niveau change."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Niveau Reparation",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"niveauReparation\": 8\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/travaux/points/1/niveau-reparation",
+							"host": ["{{baseUrl}}"],
+							"path": ["travaux", "points", "1", "niveau-reparation"]
+						},
+						"description": "Mettre à jour uniquement le niveau de réparation (1-10)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Point",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/travaux/points/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["travaux", "points", "1"]
+						},
+						"description": "Supprimer un point de réparation"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Historique",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/travaux/historique/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["travaux", "historique", "1"]
+						},
+						"description": "Récupérer l'historique des changements de statut d'un point de réparation"
+					},
+					"response": []
+				}
+			],
+			"description": "APIs de gestion des points de réparation routière"
+		},
+		{
+			"name": "Statistiques",
+			"item": [
+				{
+					"name": "Get Statistiques Generales",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/travaux/statistiques",
+							"host": ["{{baseUrl}}"],
+							"path": ["travaux", "statistiques"]
+						},
+						"description": "Obtenir les statistiques générales: nombre de points, surface totale, budget total, avancement"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Statistiques Traitement",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/travaux/statistiques/traitement",
+							"host": ["{{baseUrl}}"],
+							"path": ["travaux", "statistiques", "traitement"]
+						},
+						"description": "Obtenir les statistiques de traitement: temps moyen total, temps d'attente, temps de réalisation"
+					},
+					"response": []
+				}
+			],
+			"description": "APIs de statistiques et métriques"
+		},
+		{
+			"name": "Étapes",
+			"item": [
+				{
+					"name": "Get All Etapes",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/etapes",
+							"host": ["{{baseUrl}}"],
+							"path": ["etapes"]
+						},
+						"description": "Récupérer toutes les étapes de travaux configurées"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Etape",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nom\": \"PLANIFICATION\",\n  \"description\": \"Phase de planification des travaux\",\n  \"pourcentageAvancement\": 25,\n  \"ordre\": 1,\n  \"couleur\": \"#3B82F6\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/etapes",
+							"host": ["{{baseUrl}}"],
+							"path": ["etapes"]
+						},
+						"description": "Créer une nouvelle étape de travaux"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Etape",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nom\": \"PLANIFICATION\",\n  \"description\": \"Phase de planification détaillée\",\n  \"pourcentageAvancement\": 30,\n  \"ordre\": 1,\n  \"couleur\": \"#2563EB\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/etapes/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["etapes", "1"]
+						},
+						"description": "Mettre à jour une étape existante"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Etape",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/etapes/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["etapes", "1"]
+						},
+						"description": "Supprimer une étape"
+					},
+					"response": []
+				}
+			],
+			"description": "APIs de gestion des étapes de travaux"
+		},
+		{
+			"name": "Configuration",
+			"item": [
+				{
+					"name": "Get All Configurations",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/configuration",
+							"host": ["{{baseUrl}}"],
+							"path": ["configuration"]
+						},
+						"description": "Récupérer toutes les configurations système"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Prix par m²",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/configuration/prix-par-m2",
+							"host": ["{{baseUrl}}"],
+							"path": ["configuration", "prix-par-m2"]
+						},
+						"description": "Obtenir le prix forfaitaire par m² actuel"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Prix par m²",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"prixParM2\": \"15000\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/configuration/prix-par-m2",
+							"host": ["{{baseUrl}}"],
+							"path": ["configuration", "prix-par-m2"]
+						},
+						"description": "Mettre à jour le prix forfaitaire par m² (MANAGER uniquement)"
+					},
+					"response": []
+				},
+				{
+					"name": "Calculer Budget",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"surfaceM2\": 100,\n  \"niveauReparation\": 5\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/configuration/calculer-budget",
+							"host": ["{{baseUrl}}"],
+							"path": ["configuration", "calculer-budget"]
+						},
+						"description": "Calculer le budget estimé selon la formule: prix_par_m2 × niveau × surface"
+					},
+					"response": []
+				}
+			],
+			"description": "APIs de configuration système et calcul de budget"
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{token}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ion-page>
     <ion-header>
       <ion-toolbar>
@@ -33,10 +33,42 @@
               <label class="section-label">Description</label>
               <ion-textarea 
                 v-model="description"
-                placeholder="Décrivez le problème (optionnel)..."
+                placeholder="Decrivez le probleme (optionnel)..."
                 :rows="4"
                 class="custom-textarea"
               ></ion-textarea>
+            </div>
+
+            <!-- 📸 Section Photos -->
+            <div class="info-section">
+              <label class="section-label">📸 Photos (optionnel)</label>
+              
+              <!-- Grille de photos -->
+              <div class="photos-grid" v-if="photos.length > 0">
+                <div 
+                  v-for="(photo, index) in photos" 
+                  :key="index" 
+                  class="photo-item"
+                >
+                  <img :src="photo.webviewPath" alt="Photo signalement" />
+                  <button class="photo-remove" @click="removePhoto(index)">✕</button>
+                </div>
+              </div>
+
+              <!-- Bouton ajouter photo -->
+              <ion-button 
+                expand="block" 
+                fill="outline"
+                @click="addPhoto"
+                class="add-photo-button"
+                :disabled="photos.length >= 5"
+              >
+                <span>📷</span>
+                <span>{{ photos.length >= 5 ? 'Maximum 5 photos' : 'Ajouter une photo' }}</span>
+              </ion-button>
+              <p class="photos-hint" v-if="photos.length > 0">
+                {{ photos.length }}/5 photo(s) ajoutee(s)
+              </p>
             </div>
 
             <!-- Bouton d'envoi -->
@@ -45,9 +77,11 @@
               @click="submitReport"
               class="submit-button"
               size="large"
+              :disabled="isSubmitting"
             >
-              <span>📤</span>
-              <span>Envoyer le signalement</span>
+              <ion-spinner v-if="isSubmitting" name="crescent"></ion-spinner>
+              <span v-else>📤</span>
+              <span>{{ isSubmitting ? 'Envoi en cours...' : 'Envoyer le signalement' }}</span>
             </ion-button>
           </ion-card-content>
         </ion-card>
@@ -58,7 +92,7 @@
         :is-open="toastOpen"
         :message="toastMessage"
         duration="2000"
-        color="success"
+        :color="toastColor"
         position="bottom"
         @did-dismiss="toastOpen = false"
       />
@@ -73,23 +107,22 @@ import {
   IonToolbar,
   IonTitle,
   IonContent,
-  IonItem,
-  IonLabel,
   IonTextarea,
   IonButton,
-  IonText,
   IonToast,
   IonCard,
   IonCardHeader,
   IonCardTitle,
   IonCardContent,
   IonButtons,
-  IonBackButton
+  IonBackButton,
+  IonSpinner
 } from '@ionic/vue'
 
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { reportService } from '@/services/report.service'
+import { photoService, type UserPhoto } from '@/services/photo.service'
 
 const router = useRouter()
 const route = useRoute()
@@ -97,6 +130,7 @@ const route = useRoute()
 // Toast
 const toastOpen = ref(false)
 const toastMessage = ref('')
+const toastColor = ref('success')
 
 // Position
 const latitude = ref('En attente...')
@@ -105,14 +139,18 @@ const longitude = ref('En attente...')
 // Description
 const description = ref('')
 
-// Récupérer la position GPS ou depuis les query params
+// 📸 Photos
+const photos = ref<UserPhoto[]>([])
+const isSubmitting = ref(false)
+
+// Recuperer la position GPS ou depuis les query params
 onMounted(() => {
-  // Si les coordonnées sont passées dans l'URL (clic sur la carte)
+  // Si les coordonnees sont passees dans URL (clic sur la carte)
   if (route.query.lat && route.query.lng) {
     latitude.value = route.query.lat as string
     longitude.value = route.query.lng as string
   } else {
-    // Sinon, utiliser la géolocalisation
+    // Sinon, utiliser la geolocalisation
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -122,42 +160,93 @@ onMounted(() => {
         (err) => {
           latitude.value = 'Indisponible'
           longitude.value = 'Indisponible'
-          console.error('Erreur géolocalisation:', err)
+          console.error('Erreur geolocalisation:', err)
         }
       )
     } else {
-      latitude.value = 'Non supporté'
-      longitude.value = 'Non supporté'
+      latitude.value = 'Non supporte'
+      longitude.value = 'Non supporte'
     }
   }
 })
 
-// Envoyer signalement
-const submitReport = async () => {
-  console.log('📤 Tentative d’envoi du signalement')
+// 📸 Ajouter une photo
+const addPhoto = async () => {
+  if (photos.value.length >= 5) {
+    toastMessage.value = '⚠️ Maximum 5 photos autorisees'
+    toastColor.value = 'warning'
+    toastOpen.value = true
+    return
+  }
 
   try {
+    const photo = await photoService.addPhoto()
+    
+    if (photo) {
+      photos.value.push(photo)
+      toastMessage.value = '📷 Photo ajoutee !'
+      toastColor.value = 'success'
+      toastOpen.value = true
+      console.log('📷 Photo ajoutee, total:', photos.value.length)
+    }
+  } catch (error) {
+    console.error('Erreur ajout photo:', error)
+    toastMessage.value = '❌ Erreur lors de ajout de la photo'
+    toastColor.value = 'danger'
+    toastOpen.value = true
+  }
+}
+
+// 📸 Supprimer une photo
+const removePhoto = (index: number) => {
+  photos.value.splice(index, 1)
+  console.log('🗑️ Photo supprimee, total:', photos.value.length)
+}
+
+// Envoyer signalement
+const submitReport = async () => {
+  console.log('📤 Tentative envoi du signalement')
+  
+  if (isSubmitting.value) return
+  isSubmitting.value = true
+
+  try {
+    // 📸 Recuperer les photos en base64 si presentes
+    let photoUrls: string[] = []
+    
+    if (photos.value.length > 0) {
+      photoUrls = photoService.getPhotosBase64(photos.value)
+      console.log('📸 Photos en base64:', photoUrls.length)
+    }
+
+    // Creer le signalement avec les URLs des photos
     const result = await reportService.createReport({
       latitude: latitude.value,
       longitude: longitude.value,
-      description: description.value
+      description: description.value,
+      photoUrls
     })
 
-    console.log('✅ Enregistré Firestore:', result)
+    console.log('✅ Enregistre Firestore:', result)
 
-    toastMessage.value = '✅ Signalement envoyé avec succès'
+    toastMessage.value = '✅ Signalement envoye avec succes'
+    toastColor.value = 'success'
     toastOpen.value = true
 
     setTimeout(() => router.replace('/map'), 2000)
   } catch (error) {
-    console.error('❌ Erreur Firestore:', error)
-    alert('❌ Erreur lors de l’envoi du signalement')
+    console.error('❌ Erreur:', error)
+    toastMessage.value = '❌ Erreur lors de envoi'
+    toastColor.value = 'danger'
+    toastOpen.value = true
+  } finally {
+    isSubmitting.value = false
   }
 }
-
 </script>
+
 <style scoped>
-/* Page background - Nouveau thème sombre */
+/* Page background - Nouveau theme sombre */
 ion-content {
   --background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
 }
@@ -257,7 +346,7 @@ ion-back-button {
   font-weight: 600;
 }
 
-/* Textarea personnalisé */
+/* Textarea personnalise */
 .custom-textarea {
   --background: rgba(255, 255, 255, 0.05);
   --color: white;
@@ -269,6 +358,72 @@ ion-back-button {
   border-radius: 12px;
   font-size: 15px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 📸 Photos grid */
+.photos-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.photo-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.photo-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 0, 0, 0.8);
+  color: white;
+  border: none;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.photo-remove:hover {
+  background: rgba(255, 0, 0, 1);
+}
+
+/* Bouton ajouter photo */
+.add-photo-button {
+  --border-radius: 12px;
+  --border-color: rgba(255, 255, 255, 0.3);
+  --color: white;
+  --background-hover: rgba(255, 255, 255, 0.1);
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.add-photo-button span:first-child {
+  margin-right: 8px;
+  font-size: 18px;
+}
+
+.photos-hint {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  margin-top: 8px;
 }
 
 /* Bouton submit */
@@ -291,5 +446,9 @@ ion-back-button {
 .submit-button span:first-child {
   margin-right: 8px;
   font-size: 20px;
+}
+
+.submit-button ion-spinner {
+  margin-right: 8px;
 }
 </style>

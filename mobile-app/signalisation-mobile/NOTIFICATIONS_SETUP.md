@@ -310,3 +310,101 @@ Un administrateur change le statut depuis le dashboard web.
 - [ ] Ajouter `google-services.json` depuis Firebase Console
 - [ ] Personnaliser le son des notifications
 - [ ] Ajouter une page d'historique des notifications
+
+
+============================================================
+  IMPLEMENTATION FONCTIONNALITE PHOTO - SIGNALISATION MOBILE
+============================================================
+
+1. INSTALLATION DU PLUGIN CAMERA CAPACITOR
+-------------------------------------------
+cd mobile-app/signalisation-mobile
+npm install @capacitor/camera
+
+2. FICHIER CREE : src/services/photo.service.ts
+-------------------------------------------------
+- Service qui gere la capture/selection de photos
+- Detection automatique web vs natif (Capacitor.isNativePlatform())
+- Sur WEB : utilise <input type="file" accept="image/*"> 
+- Sur NATIF (Android/iOS) : utilise Camera.getPhoto() de Capacitor
+- Compression automatique des images (800px max, JPEG qualite 50%)
+- Conversion en base64 pour stockage direct dans Firestore
+- Methodes : addPhoto(), getPhotosBase64()
+
+3. FICHIER MODIFIE : src/services/report.service.ts
+-----------------------------------------------------
+- Ajout du champ "photoUrls?: string[]" dans l'interface Report
+- Ce champ stocke les photos en base64 directement dans Firestore
+- Ajout du parametre photoUrls dans createReport()
+- Le champ est sauvegarde avec : photoUrls: data.photoUrls || []
+
+4. FICHIER MODIFIE : src/pages/ReportForm.vue (supprime et recree)
+-------------------------------------------------------------------
+- Ajout section "Photos (optionnel)" dans le formulaire
+- Grille de preview des photos (max 5)
+- Bouton "Ajouter une photo" avec icone camera
+- Bouton X pour supprimer une photo
+- Compteur "X/5 photo(s) ajoutee(s)"
+- Spinner pendant l'envoi
+- Toast colores (success=vert, error=rouge, warning=orange)
+- Au submit : appel photoService.getPhotosBase64() puis reportService.createReport()
+
+5. FICHIER CREE : src/pages/ReportDetail.vue
+----------------------------------------------
+- Nouvelle page pour voir le detail d'un signalement
+- Affiche : statut, description, position GPS, date, auteur
+- Galerie photos en grille 2 colonnes
+- Modal plein ecran au clic sur une photo (zoom)
+- Etats loading/error/not-found geres
+
+6. FICHIER MODIFIE : src/router/index.ts
+------------------------------------------
+- Ajout import ReportDetail
+- Ajout route : { path: '/report/:id', name: 'ReportDetail', component: ReportDetail }
+
+7. FICHIER MODIFIE : src/pages/Reports.vue
+--------------------------------------------
+- Ajout badge "📸 X photo(s)" sur chaque carte de signalement
+- CSS classe .photo-badge ajoutee
+
+8. FICHIER MODIFIE : src/firebase/firebase.ts
+-----------------------------------------------
+- INITIALEMENT : ajout de getStorage et export storage
+- PUIS SUPPRIME : car on utilise Firestore directement (pas besoin de Storage)
+- Version finale : seulement initializeApp + getAuth
+
+============================================================
+  STRUCTURE DES DONNEES DANS FIRESTORE
+============================================================
+Collection: "reports"
+Document: {
+  latitude: number,
+  longitude: number,
+  description: string,
+  status: "NOUVEAU" | "EN_COURS" | "RESOLU",
+  createdAt: serverTimestamp(),
+  userId: string,
+  userEmail: string,
+  photoUrls: [            <-- NOUVEAU
+    "data:image/jpeg;base64,/9j/4AAQ...",   (photo 1 en base64)
+    "data:image/jpeg;base64,/9j/4BBR...",   (photo 2 en base64)
+  ]
+}
+
+============================================================
+  COMMANDES EXECUTEES
+============================================================
+cd C:\Users\clari\Music\firebase\ProjetS5Cloud\mobile-app\signalisation-mobile
+npm install @capacitor/camera
+npm run build
+npx cap sync android
+npx vite --port 8100
+
+============================================================
+  CHOIX TECHNIQUE
+============================================================
+- Option retenue : stockage base64 dans Firestore (sans Firebase Storage)
+- Raison : le projet est sur le plan Spark (gratuit) qui ne supporte pas Storage
+- Limite : 1 MB par document Firestore = 3-5 photos compressees max
+- Compression : 800px max, JPEG qualite 50% (~50-150 KB par photo)
+============================================================

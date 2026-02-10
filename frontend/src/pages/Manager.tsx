@@ -3,13 +3,16 @@ import { useAuth } from '../context/AuthContext';
 import { useTravaux } from '../context/TravauxContext';
 import { travauxService } from '../services/travaux.service';
 import etapesService from '../services/etapes.service';
+
+import configurationService from '../services/configuration.service';
 import type { CreateTravailRequest, UpdateTravailRequest, Statistiques, StatistiquesTraitement } from '../types/travaux.types';
 import type { EtapeTravaux, CreateEtapeRequest } from '../types/etapes.types';
 import type { HistoriqueEtape } from '../types/historique.types';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import { useSignalements } from '../context/SignalementContext';
-
+import { signalementService, type Signalement } from '../services/signalement.service';
+import { notificationService } from "../services/notification.service"
 import {
   Plus,
   Edit,
@@ -27,6 +30,7 @@ import {
 } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+
 
 const Manager: React.FC = () => {
   const { user } = useAuth();
@@ -58,6 +62,14 @@ const Manager: React.FC = () => {
   const [showDatePickerModal, setShowDatePickerModal] = useState(false);
   const [pendingStatusChange, setPendingStatusChange] = useState<{ pointId: number, newStatut: string } | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>('');
+  const [showNiveauModal, setShowNiveauModal] = useState(false);
+  const [selectedTravailForNiveau, setSelectedTravailForNiveau] = useState<{ id: number, statut: string } | null>(null);
+  const [tempNiveau, setTempNiveau] = useState<number>(5);
+
+  const [prixParM2, setPrixParM2] = useState<number>(10000);
+  const [showPrixModal, setShowPrixModal] = useState(false);
+  const [tempPrix, setTempPrix] = useState<number>(10000);
+  const [budgetCalcule, setBudgetCalcule] = useState<number | null>(null);
 
   const [formData, setFormData] = useState<CreateTravailRequest>({
     titre: '',
@@ -67,6 +79,7 @@ const Manager: React.FC = () => {
     statut: 'NOUVEAU',
     surfaceM2: undefined,
     budget: undefined,
+    niveauReparation: undefined,
   });
 
   useEffect(() => {
@@ -99,6 +112,15 @@ const Manager: React.FC = () => {
     }
   }, [formData.latitude, formData.longitude]);
 
+  // Calculer automatiquement le budget quand surface ou niveau change
+  useEffect(() => {
+    if (formData.surfaceM2 && formData.niveauReparation) {
+      calculerBudget(formData.surfaceM2, formData.niveauReparation);
+    } else {
+      setBudgetCalcule(null);
+    }
+  }, [formData.surfaceM2, formData.niveauReparation]);
+
   const loadStatistiques = async () => {
     try {
       const stats = await travauxService.getStatistiques();
@@ -117,12 +139,71 @@ const Manager: React.FC = () => {
     }
   };
 
+  const loadPrixParM2 = async () => {
+    try {
+      const data = await configurationService.getPrixParM2();
+      setPrixParM2(data.prixParM2);
+      setTempPrix(data.prixParM2);
+    } catch (error) {
+      console.error('Erreur chargement prix par m²:', error);
+    }
+  };
+
+  const handleUpdatePrixParM2 = async () => {
+    try {
+      await configurationService.updatePrixParM2(tempPrix);
+      setPrixParM2(tempPrix);
+      setShowPrixModal(false);
+      alert('Prix par m² mis à jour avec succès');
+    } catch (error) {
+      console.error('Erreur mise à jour prix:', error);
+      alert('Erreur lors de la mise à jour du prix par m²');
+    }
+  };
+
+  const calculerBudget = async (surfaceM2?: number, niveauReparation?: number) => {
+    if (!surfaceM2 || !niveauReparation) {
+      setBudgetCalcule(null);
+      return;
+    }
+    
+    try {
+      const result = await configurationService.calculerBudget(surfaceM2, niveauReparation);
+      setBudgetCalcule(result.budget);
+    } catch (error) {
+      console.error('Erreur calcul budget:', error);
+      setBudgetCalcule(null);
+    }
+  };
+
   const loadEtapes = async () => {
     try {
       const data = await etapesService.getAll();
       setEtapes(data);
     } catch (error) {
       console.error('Erreur chargement étapes:', error);
+    }
+  };
+
+  const handleUpdateNiveauReparation = async (signalementId: string, niveau: number) => {
+    try {
+      await signalementService.updateNiveauReparation(signalementId, niveau);
+      await syncSignalements(); // Rafraîchir les signalements
+      alert(`Niveau de réparation mis à jour: ${niveau}/10`);
+    } catch (error: any) {
+      console.error('Erreur mise à jour niveau:', error);
+      alert('Erreur lors de la mise à jour du niveau de réparation');
+    }
+  };
+
+  const handleUpdateNiveauReparationTravaux = async (travailId: number, niveau: number) => {
+    try {
+      await travauxService.updateNiveauReparation(travailId, niveau);
+      await refresh(); // Rafraîchir les travaux
+      alert(`Niveau de réparation mis à jour: ${niveau}/10`);
+    } catch (error: any) {
+      console.error('Erreur mise à jour niveau:', error);
+      alert('Erreur lors de la mise à jour du niveau de réparation');
     }
   };
 
@@ -172,27 +253,67 @@ const Manager: React.FC = () => {
   };
 
   const handleQuickStatusChange = async (pointId: number, newStatut: string) => {
-    if (!confirm(`Changer le statut vers "${newStatut}" ?`)) return;
+    const travail = travaux.find(t => t.id === pointId);
+    if (!travail) return;
+    
+    // Empêcher la régression des statuts
+    if (travail.statut === 'TERMINE') {
+      alert('⚠️ Les travaux terminés ne peuvent plus changer de statut');
+      return;
+    }
+    
+    if (travail.statut === 'EN_COURS' && newStatut === 'NOUVEAU') {
+      alert('⚠️ Les travaux en cours ne peuvent pas revenir au statut NOUVEAU');
+      return;
+    }
+    
+    // Ouvrir la modal pour définir le niveau ET éventuellement la date
+    setSelectedTravailForNiveau({ id: pointId, statut: newStatut });
+    setTempNiveau(travail.niveauReparation || 5);
+    
+    // Si le statut change vers EN_COURS ou TERMINE, on aura aussi besoin de la date
+    if ((newStatut === 'EN_COURS' && travail.statut !== 'EN_COURS') || 
+        (newStatut === 'TERMINE' && travail.statut !== 'TERMINE')) {
+      setPendingStatusChange({ pointId, newStatut });
+      setSelectedDate(new Date().toISOString().split('T')[0]);
+    } else {
+      setPendingStatusChange(null);
+    }
+    
+    setShowNiveauModal(true);
+  };
+  
+  const confirmStatusAndNiveauChange = async () => {
+    if (!selectedTravailForNiveau) return;
     
     try {
-      const travail = travaux.find(t => t.id === pointId);
-      if (!travail) return;
+      const updateData: any = { 
+        statut: selectedTravailForNiveau.statut,
+        niveauReparation: tempNiveau
+      };
       
-      // Si le statut change vers EN_COURS ou TERMINE, afficher le sélecteur de date
-      if ((newStatut === 'EN_COURS' && travail.statut !== 'EN_COURS') || 
-          (newStatut === 'TERMINE' && travail.statut !== 'TERMINE')) {
-        setPendingStatusChange({ pointId, newStatut });
-        // Définir la date par défaut à aujourd'hui
-        setSelectedDate(new Date().toISOString().split('T')[0]);
-        setShowDatePickerModal(true);
-        return;
+      // Ajouter la date appropriée selon le statut si nécessaire
+      if (pendingStatusChange) {
+        if (selectedTravailForNiveau.statut === 'EN_COURS') {
+          updateData.dateDebutTravaux = selectedDate;
+        } else if (selectedTravailForNiveau.statut === 'TERMINE') {
+          updateData.dateFinTravaux = selectedDate;
+        }
       }
       
-      // Pour les autres changements de statut, procéder directement
-      await executeStatusChange(pointId, newStatut, undefined);
+      await travauxService.update(selectedTravailForNiveau.id, updateData);
+      await refresh();
+      loadStatistiques();
+      loadStatistiquesTraitement();
+      
+      setShowNiveauModal(false);
+      setSelectedTravailForNiveau(null);
+      setPendingStatusChange(null);
+      
+      alert(`Statut et niveau mis à jour avec succès !`);
     } catch (error) {
-      console.error('Erreur changement statut:', error);
-      alert('Erreur lors du changement de statut');
+      console.error('Erreur:', error);
+      alert('Erreur lors de la mise à jour');
     }
   };
   
@@ -226,6 +347,17 @@ const Manager: React.FC = () => {
       setSelectedDate('');
     }
   };
+
+  const convertirSignalement = async (s: Signalement) => {
+  try {
+    await signalementService.convertirEnPoint(s)
+    await refresh()           // recharge travaux
+    await syncSignalements()  // recharge signalements
+    alert('Signalement converti avec succès')
+  } catch (e) {
+    alert('Erreur lors de la conversion')
+  }
+}
 
   const initMap = () => {
     setTimeout(() => {
@@ -401,13 +533,22 @@ const Manager: React.FC = () => {
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard Manager</h1>
             <p className="text-gray-600">Gérez vos points de réparation et suivez les statistiques</p>
           </div>
-          <button
-            onClick={() => setShowEtapesModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-all shadow-lg"
-          >
-            <ListOrdered className="w-5 h-5" />
-            Gérer les Étapes
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowPrixModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-lg"
+            >
+              <DollarSign className="w-5 h-5" />
+              Prix/m²
+            </button>
+            <button
+              onClick={() => setShowEtapesModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-all shadow-lg"
+            >
+              <ListOrdered className="w-5 h-5" />
+              Gérer les Étapes
+            </button>
+          </div>
         </div>
 
         {/* Stats Grid */}
@@ -458,6 +599,19 @@ const Manager: React.FC = () => {
             <h3 className="text-sm font-semibold text-gray-600 mb-1">Budget Total</h3>
             <p className="text-3xl font-bold text-gray-900">{statistiques?.budgetTotal?.toLocaleString() || 0}</p>
             <p className="text-sm text-gray-500 mt-1">Ar</p>
+          </div>
+
+          {/* Nouveau: Prix par m² */}
+          <div className="bg-white rounded-2xl p-6 shadow-lg border border-itu-gray/30 card-hover cursor-pointer" onClick={() => setShowPrixModal(true)}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-blue-100 rounded-xl">
+                <DollarSign className="w-6 h-6 text-blue-600" />
+              </div>
+              <Edit className="w-5 h-5 text-gray-400 hover:text-blue-600" />
+            </div>
+            <h3 className="text-sm font-semibold text-gray-600 mb-1">Prix par m²</h3>
+            <p className="text-3xl font-bold text-gray-900">{prixParM2.toLocaleString()}</p>
+            <p className="text-sm text-gray-500 mt-1">Ar/m²</p>
           </div>
         </div>
 
@@ -715,17 +869,51 @@ const Manager: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Budget (Ar)
+                      Niveau (1-10)
                     </label>
                     <input
                       type="number"
-                      step="0.01"
-                      value={formData.budget || ''}
-                      onChange={(e) => setFormData({ ...formData, budget: e.target.value ? parseFloat(e.target.value) : undefined })}
-                      placeholder="Ex: 5000000"
+                      min="1"
+                      max="10"
+                      value={formData.niveauReparation || ''}
+                      onChange={(e) => setFormData({ ...formData, niveauReparation: e.target.value ? parseInt(e.target.value) : undefined })}
+                      placeholder="1-10"
                       className="w-full px-4 py-3 border-2 border-itu-gray/30 rounded-xl focus:border-itu-accent focus:ring-4 focus:ring-itu-accent/10 transition-all outline-none"
                     />
                   </div>
+                </div>
+
+                {/* Budget calculé automatiquement */}
+                {budgetCalcule !== null && (
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border-2 border-green-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-green-700 font-semibold mb-1">Budget Estimé</p>
+                        <p className="text-2xl font-bold text-green-900">{budgetCalcule.toLocaleString()} Ar</p>
+                        <p className="text-xs text-green-600 mt-1">
+                          Calcul: {prixParM2.toLocaleString()} Ar/m² × {formData.niveauReparation} × {formData.surfaceM2} m²
+                        </p>
+                      </div>
+                      <CheckCircle2 className="w-8 h-8 text-green-600" />
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Budget Manuel (optionnel)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.budget || ''}
+                    onChange={(e) => setFormData({ ...formData, budget: e.target.value ? parseFloat(e.target.value) : undefined })}
+                    placeholder={budgetCalcule ? `Laisser vide pour utiliser ${budgetCalcule.toLocaleString()} Ar` : "Ex: 5000000"}
+                    className="w-full px-4 py-3 border-2 border-itu-gray/30 rounded-xl focus:border-itu-accent focus:ring-4 focus:ring-itu-accent/10 transition-all outline-none"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Le budget sera calculé automatiquement si vous ne spécifiez pas de montant
+                  </p>
                 </div>
 
                 <div className="flex gap-3 pt-4 border-t border-itu-gray/30">
@@ -762,7 +950,24 @@ const Manager: React.FC = () => {
             </h2>
           </div>
           <div className="divide-y divide-itu-gray/30">
-            {filteredTravaux.map((travail) => (
+            {filteredTravaux.map((travail) => {
+              const getNiveauColor = (niveau?: number) => {
+                if (!niveau) return 'bg-gray-100 text-gray-500';
+                if (niveau <= 3) return 'bg-green-100 text-green-700 border-green-300';
+                if (niveau <= 6) return 'bg-yellow-100 text-yellow-700 border-yellow-300';
+                if (niveau <= 8) return 'bg-orange-100 text-orange-700 border-orange-300';
+                return 'bg-red-100 text-red-700 border-red-300';
+              };
+
+              const getNiveauLabel = (niveau?: number) => {
+                if (!niveau) return 'Non défini';
+                if (niveau <= 3) return `Niveau ${niveau} - Faible`;
+                if (niveau <= 6) return `Niveau ${niveau} - Moyen`;
+                if (niveau <= 8) return `Niveau ${niveau} - Élevé`;
+                return `Niveau ${niveau} - Critique`;
+              };
+
+              return (
               <div key={travail.id} className="p-6 hover:bg-itu-lighter transition-all duration-200">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -770,6 +975,9 @@ const Manager: React.FC = () => {
                       <h3 className="text-lg font-bold text-gray-900">{travail.titre}</h3>
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatutBadge(travail.statut)}`}>
                         {travail.statut === 'EN_COURS' ? 'En cours' : travail.statut === 'TERMINE' ? 'Terminé' : 'Nouveau'}
+                      </span>
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getNiveauColor(travail.niveauReparation)}`}>
+                        {getNiveauLabel(travail.niveauReparation)}
                       </span>
                     </div>
                     <p className="text-gray-600 mb-3">{travail.description}</p>
@@ -793,11 +1001,17 @@ const Manager: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex gap-2 ml-4">
-                    {/* Menu déroulant pour changer le statut */}
+                    {/* Menu déroulant pour changer le statut (le niveau sera défini dans la modal) */}
                     <select
                       value={travail.statut}
                       onChange={(e) => handleQuickStatusChange(travail.id, e.target.value)}
-                      className="px-3 py-2 border-2 border-gray-300 rounded-lg font-semibold text-sm hover:border-itu-accent transition-all cursor-pointer"
+                      disabled={travail.statut === 'TERMINE'}
+                      className={`px-3 py-2 border-2 rounded-lg font-semibold text-sm transition-all ${
+                        travail.statut === 'TERMINE' 
+                          ? 'border-gray-200 bg-gray-100 cursor-not-allowed opacity-60' 
+                          : 'border-gray-300 hover:border-itu-accent cursor-pointer'
+                      }`}
+                      title={travail.statut === 'TERMINE' ? 'Les travaux terminés ne peuvent plus changer de statut' : ''}
                     >
                       {etapes.length > 0 ? (
                         etapes.map(etape => (
@@ -807,9 +1021,15 @@ const Manager: React.FC = () => {
                         ))
                       ) : (
                         <>
-                          <option value="NOUVEAU">NOUVEAU (0%)</option>
-                          <option value="EN_COURS">EN_COURS (50%)</option>
-                          <option value="TERMINE">TERMINE (100%)</option>
+                          <option value="NOUVEAU" disabled={travail.statut === 'EN_COURS' || travail.statut === 'TERMINE'}>
+                            NOUVEAU (0%)
+                          </option>
+                          <option value="EN_COURS" disabled={travail.statut === 'TERMINE'}>
+                            EN_COURS (50%)
+                          </option>
+                          <option value="TERMINE">
+                            TERMINE (100%)
+                          </option>
                         </>
                       )}
                     </select>
@@ -835,7 +1055,7 @@ const Manager: React.FC = () => {
                   </div>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         </div>
 
@@ -856,7 +1076,24 @@ const Manager: React.FC = () => {
           </div>
 
           <div className="divide-y divide-itu-gray/30">
-            {signalements.map((s) => (
+            {signalements.map((s) => {
+              const getNiveauColor = (niveau?: number) => {
+                if (!niveau) return 'bg-gray-100 text-gray-500';
+                if (niveau <= 3) return 'bg-green-100 text-green-700 border-green-300';
+                if (niveau <= 6) return 'bg-yellow-100 text-yellow-700 border-yellow-300';
+                if (niveau <= 8) return 'bg-orange-100 text-orange-700 border-orange-300';
+                return 'bg-red-100 text-red-700 border-red-300';
+              };
+
+              const getNiveauLabel = (niveau?: number) => {
+                if (!niveau) return 'Non défini';
+                if (niveau <= 3) return `Niveau ${niveau} - Faible`;
+                if (niveau <= 6) return `Niveau ${niveau} - Moyen`;
+                if (niveau <= 8) return `Niveau ${niveau} - Élevé`;
+                return `Niveau ${niveau} - Critique`;
+              };
+
+              return (
               <div key={s.id} className="p-6 hover:bg-blue-50 transition-all">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -868,6 +1105,10 @@ const Manager: React.FC = () => {
                       <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">
                         Signalement
                       </span>
+
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getNiveauColor(s.niveauReparation)}`}>
+                        {getNiveauLabel(s.niveauReparation)}
+                      </span>
                     </div>
 
                     <p className="text-gray-600 mb-3">
@@ -877,25 +1118,74 @@ const Manager: React.FC = () => {
                     <div className="flex flex-wrap gap-4 text-sm text-gray-500">
                       <span className="flex items-center gap-1">
                         <MapPin className="w-4 h-4" />
-                        {s.latitude.toFixed(4)}, {s.longitude.toFixed(4)}
+                        {s.latitude?.toFixed(4)}, {s.longitude?.toFixed(4)}
                       </span>
 
                       {s.createdAt && (
                         <span className="flex items-center gap-1">
                           <Clock className="w-4 h-4" />
-                          {new Date(s.createdAt).toLocaleDateString()}
+                          {s.createdAt.toDate 
+                            ? s.createdAt.toDate().toLocaleDateString('fr-FR')
+                            : new Date(s.createdAt).toLocaleDateString('fr-FR')}
                         </span>
                       )}
+
+                      {s.userEmail && (
+                        <span className="flex items-center gap-1 text-xs">
+                          👤 {s.userEmail}
+                        </span>
+                      )}
+                    <button
+                      onClick={() => convertirSignalement(s)}
+                      className="px-3 py-2 bg-green-600 text-white rounded-lg"
+                    >
+                      Créer point
+                    </button>
+
                     </div>
+
+                    {/* Photos aperçu */}
+                    {s.photoUrls && s.photoUrls.length > 0 && (
+                      <div className="mt-3 flex gap-2">
+                        {s.photoUrls.slice(0, 3).map((url, idx) => (
+                          <img 
+                            key={idx}
+                            src={url} 
+                            alt={`Photo ${idx + 1}`}
+                            className="w-16 h-16 object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-80"
+                            onClick={() => window.open(url, '_blank')}
+                          />
+                        ))}
+                        {s.photoUrls.length > 3 && (
+                          <div className="w-16 h-16 flex items-center justify-center bg-gray-100 rounded-lg border border-gray-200 text-xs text-gray-600 font-semibold">
+                            +{s.photoUrls.length - 3}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
-                  {/* Actions futures possibles */}
-                  <div className="ml-4 text-blue-500 font-semibold text-sm">
-                    En attente
+                  {/* Sélecteur de niveau de réparation */}
+                  <div className="ml-4 flex flex-col items-end gap-2">
+                    <label className="text-xs font-semibold text-gray-600 uppercase">
+                      Niveau de réparation
+                    </label>
+                    <select
+                      value={s.niveauReparation || ''}
+                      onChange={(e) => handleUpdateNiveauReparation(s.id, parseInt(e.target.value))}
+                      className="px-3 py-2 border-2 border-gray-300 rounded-lg font-semibold text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer hover:border-blue-400 transition-colors"
+                    >
+                      <option value="">Non défini</option>
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((niveau) => (
+                        <option key={niveau} value={niveau}>
+                          Niveau {niveau}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               </div>
-            ))}
+            )})}
 
             {signalements.length === 0 && !loading && (
               <div className="p-6 text-center text-gray-500">
@@ -1229,7 +1519,99 @@ const Manager: React.FC = () => {
         </div>
       )}
 
-      {/* Modal pour choisir la date de changement de statut */}
+      {/* Modal pour définir le niveau de priorité lors du changement de statut */}
+      {showNiveauModal && selectedTravailForNiveau && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
+            <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-black px-6 py-4 rounded-t-2xl">
+              <h2 className="text-2xl font-bold flex items-center gap-2">
+                ⚡ Changement de statut
+              </h2>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              <div>
+                <p className="text-gray-700 mb-2">
+                  Nouveau statut : <strong className="text-lg">{selectedTravailForNiveau.statut}</strong>
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  Niveau de priorité (1-10) *
+                </label>
+                <div className="grid grid-cols-10 gap-2">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((niveau) => {
+                    const getBgColor = (n: number) => {
+                      if (n <= 3) return 'bg-green-500 hover:bg-green-600';
+                      if (n <= 6) return 'bg-yellow-500 hover:bg-yellow-600';
+                      if (n <= 8) return 'bg-orange-500 hover:bg-orange-600';
+                      return 'bg-red-500 hover:bg-red-600';
+                    };
+                    
+                    return (
+                      <button
+                        key={niveau}
+                        type="button"
+                        onClick={() => setTempNiveau(niveau)}
+                        className={`h-12 rounded-lg font-bold text-white transition-all ${
+                          tempNiveau === niveau 
+                            ? `${getBgColor(niveau)} ring-4 ring-blue-400 scale-110` 
+                            : `${getBgColor(niveau)} opacity-60 hover:opacity-100`
+                        }`}
+                      >
+                        {niveau}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-gray-500 mt-3">
+                  1-3: Faible • 4-6: Moyen • 7-8: Élevé • 9-10: Critique
+                </p>
+              </div>
+
+              {pendingStatusChange && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Date {selectedTravailForNiveau.statut === 'EN_COURS' ? 'de début' : 'de fin'} des travaux
+                  </label>
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    max={new Date().toISOString().split('T')[0]}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                </div>
+              )}
+              
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowNiveauModal(false);
+                    setSelectedTravailForNiveau(null);
+                    setPendingStatusChange(null);
+                  }}
+                  className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all font-semibold"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmStatusAndNiveauChange}
+                  disabled={pendingStatusChange && !selectedDate}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-black rounded-lg hover:shadow-lg transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ✓ Confirmer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/*Modal pour choisir la date de changement de statut */}
       {showDatePickerModal && pendingStatusChange && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
@@ -1282,6 +1664,73 @@ const Manager: React.FC = () => {
                   className="flex-1 px-4 py-3 bg-black text-white rounded-lg hover:shadow-lg transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Confirmer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal pour modifier le prix par m² */}
+      {showPrixModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
+            <div className="bg-black text-white px-6 py-4 rounded-t-2xl">
+              <h2 className="text-2xl font-bold flex items-center gap-2">
+                <DollarSign className="w-6 h-6" />
+                Configurer Prix par m²
+              </h2>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Prix Forfaitaire par m² (Ar)
+                </label>
+                <input
+                  type="number"
+                  step="100"
+                  value={tempPrix}
+                  onChange={(e) => setTempPrix(parseFloat(e.target.value) || 0)}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg font-semibold"
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  Ce prix sera utilisé pour calculer automatiquement le budget:
+                  <br />
+                  <strong>Budget = Prix/m² × Niveau × Surface</strong>
+                </p>
+              </div>
+
+              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                <h3 className="text-sm font-semibold text-blue-900 mb-2">Exemple de Calcul</h3>
+                <div className="text-xs text-blue-700 space-y-1">
+                  <div>Surface: 100 m²</div>
+                  <div>Niveau: 5</div>
+                  <div>Prix: {tempPrix.toLocaleString()} Ar/m²</div>
+                  <div className="border-t border-blue-300 pt-1 mt-1 font-bold">
+                    Budget estimé: {(tempPrix * 5 * 100).toLocaleString()} Ar
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPrixModal(false);
+                    setTempPrix(prixParM2);
+                  }}
+                  className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all font-semibold"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={handleUpdatePrixParM2}
+                  className="flex-1 px-4 py-3 bg-black text-white rounded-lg hover:shadow-lg transition-all font-semibold"
+                >
+                  <Save className="w-5 h-5 inline mr-2" />
+                  Enregistrer
                 </button>
               </div>
             </div>

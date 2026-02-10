@@ -36,16 +36,19 @@ public class PointReparationService {
     private final EntrepriseRepository entrepriseRepository;
     private final UtilisateurRepository utilisateurRepository;
     private final HistoriqueEtapeRepository historiqueRepository;
+    private final ConfigurationService configurationService;
     private final GeometryFactory geometryFactory;
     
     public PointReparationService(PointDeReparationRepository pointRepository,
                                  EntrepriseRepository entrepriseRepository,
                                  UtilisateurRepository utilisateurRepository,
-                                 HistoriqueEtapeRepository historiqueRepository) {
+                                 HistoriqueEtapeRepository historiqueRepository,
+                                 ConfigurationService configurationService) {
         this.pointRepository = pointRepository;
         this.entrepriseRepository = entrepriseRepository;
         this.utilisateurRepository = utilisateurRepository;
         this.historiqueRepository = historiqueRepository;
+        this.configurationService = configurationService;
         this.geometryFactory = new GeometryFactory();
     }
     
@@ -76,7 +79,18 @@ public class PointReparationService {
         point.setDescription(request.getDescription());
         point.setStatut(request.getStatut() != null ? request.getStatut() : "NOUVEAU");
         point.setSurfaceM2(request.getSurfaceM2());
-        point.setBudget(request.getBudget());
+        point.setNiveauReparation(request.getNiveauReparation());
+        
+        // Calculer automatiquement le budget si surface et niveau sont fournis
+        if (request.getBudget() != null) {
+            point.setBudget(request.getBudget());
+        } else if (request.getSurfaceM2() != null && request.getNiveauReparation() != null) {
+            BigDecimal budgetCalcule = configurationService.calculerBudget(
+                request.getSurfaceM2(), 
+                request.getNiveauReparation()
+            );
+            point.setBudget(budgetCalcule);
+        }
         
         // Créer la géométrie (Point)
         Coordinate coord = new Coordinate(request.getLongitude(), request.getLatitude());
@@ -155,11 +169,25 @@ public class PointReparationService {
         if (request.getDateFinTravaux() != null) {
             point.setDateFinTravaux(request.getDateFinTravaux());
         }
+        
         if (request.getSurfaceM2() != null) {
             point.setSurfaceM2(request.getSurfaceM2());
         }
+        if (request.getNiveauReparation() != null) {
+            point.setNiveauReparation(request.getNiveauReparation());
+        }
+        
+        // Recalculer automatiquement le budget si surface ou niveau ont changé
+        // Mais seulement si budget n'est pas explicitement fourni
         if (request.getBudget() != null) {
             point.setBudget(request.getBudget());
+        } else if ((request.getSurfaceM2() != null || request.getNiveauReparation() != null) 
+                   && point.getSurfaceM2() != null && point.getNiveauReparation() != null) {
+            BigDecimal budgetCalcule = configurationService.calculerBudget(
+                point.getSurfaceM2(), 
+                point.getNiveauReparation()
+            );
+            point.setBudget(budgetCalcule);
         }
         
         // Mettre à jour la géométrie si latitude/longitude fournies
@@ -201,7 +229,7 @@ public class PointReparationService {
         String entrepriseNom = point.getEntreprise() != null ? point.getEntreprise().getNom() : null;
         String utilisateurNom = point.getUtilisateur() != null ? point.getUtilisateur().getNom() : null;
         
-        return new PointReparationDTO(
+        PointReparationDTO dto = new PointReparationDTO(
             point.getIdPoint(),
             point.getTitre(),
             point.getDescription(),
@@ -216,10 +244,12 @@ public class PointReparationService {
             entrepriseNom,
             utilisateurNom
         );
+        dto.setNiveauReparation(point.getNiveauReparation());
+        return dto;
     }
     
     private PointReparationDTO convertArrayToDTO(Object[] row) {
-        return new PointReparationDTO(
+        PointReparationDTO dto = new PointReparationDTO(
             (Integer) row[0],           // id
             (String) row[1],            // titre
             (String) row[2],            // description
@@ -234,6 +264,8 @@ public class PointReparationService {
             (String) row[11],            // entrepriseNom
             (String) row[12]            // utilisateurNom
         );
+        dto.setNiveauReparation(row[13] != null ? ((Number) row[13]).intValue() : null);  // niveauReparation
+        return dto;
     }
     
     public StatistiquesDTO getStatistiques() {

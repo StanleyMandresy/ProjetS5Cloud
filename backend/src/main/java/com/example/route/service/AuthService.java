@@ -4,9 +4,19 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.example.route.model.Utilisateur;
-import com.example.route.repository.UtilisateurRepository;
 
+
+import com.example.route.model.User;
+
+import com.example.route.repository.UserRepository;
+
+import com.example.route.model.Utilisateur;
+import com.example.route.model.LoginAttempt;
+import com.example.route.repository.UtilisateurRepository;
+import com.example.route.repository.LoginAttemptRepository;
+
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,12 +25,17 @@ public class AuthService {
     public final UtilisateurRepository utilisateurRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final LoginAttemptRepository loginAttemptRepository;
+
+    private static final int MAX_ATTEMPTS = 3;
+    private static final int BLOCK_MINUTES = 15;
 
     
-    public AuthService(UtilisateurRepository utilisateurRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
+    public AuthService(UtilisateurRepository utilisateurRepository, PasswordEncoder passwordEncoder, JwtService jwtService, LoginAttemptRepository loginAttemptRepository) {
         this.utilisateurRepository = utilisateurRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.loginAttemptRepository = loginAttemptRepository;
     }
     
     @Transactional
@@ -61,18 +76,81 @@ public class AuthService {
     }
     
     public Map<String, Object> login(String username, String password) {
+        LocalDateTime now = LocalDateTime.now();
+
+        // Vérifier si l'identifiant est bloqué
+        LoginAttempt attempt = loginAttemptRepository.findByIdentifier(username).orElse(null);
+        if (attempt != null) {
+            boolean isBlockedFlag = Boolean.TRUE.equals(attempt.getBlocked());
+            boolean isBlockedUntil = attempt.getBlockedUntil() != null && attempt.getBlockedUntil().isAfter(now);
+            boolean exceededAttempts = attempt.getAttempts() != null && attempt.getAttempts() >= MAX_ATTEMPTS;
+
+            if (isBlockedFlag || isBlockedUntil || exceededAttempts) {
+                java.time.LocalDateTime effectiveBlockedUntil = attempt.getBlockedUntil();
+                if (effectiveBlockedUntil == null) {
+                    // if not explicitly set, assume block period starts at lastAttempt
+                    if (attempt.getLastAttempt() != null) {
+                        effectiveBlockedUntil = attempt.getLastAttempt().plus(BLOCK_MINUTES, ChronoUnit.MINUTES);
+                    } else {
+                        effectiveBlockedUntil = now.plus(BLOCK_MINUTES, ChronoUnit.MINUTES);
+                    }
+                }
+                java.time.Duration remaining = java.time.Duration.between(now, effectiveBlockedUntil);
+                long minutes = Math.max(0, remaining.toMinutes());
+                long seconds = Math.max(0, remaining.getSeconds() % 60);
+                String timeMsg = minutes > 0 ? minutes + " minute(s)" : (seconds > 0 ? seconds + " seconde(s)" : "quelques instants");
+                throw new RuntimeException("❌ COMPTE BLOQUÉ - Vous avez dépassé le nombre de tentatives autorisées (3). Votre compte est bloqué pour " + timeMsg + ". Vous pouvez demander un déblocage à un manager ci-dessous.");
+            }
+        }
+
         // Rechercher l'utilisateur
         Utilisateur user = utilisateurRepository.findByNom(username)
                 .orElseThrow(() -> new RuntimeException("Nom d'utilisateur ou mot de passe incorrect"));
-        
+
         // Vérifier le mot de passe
         if (!passwordEncoder.matches(password, user.getMotDePasse())) {
-            throw new RuntimeException("Nom d'utilisateur ou mot de passe incorrect, veuillez réessayer");
+            // enregistrer l'echec
+            if (attempt == null) {
+                attempt = new LoginAttempt();
+                attempt.setIdentifier(username);
+                attempt.setIdUtilisateur(user.getIdUtilisateur());
+                attempt.setCreatedAt(now);
+            }
+            int newAttempts = (attempt.getAttempts() == null ? 0 : attempt.getAttempts()) + 1;
+            attempt.setAttempts(newAttempts);
+            attempt.setLastAttempt(now);
+
+            if (newAttempts >= MAX_ATTEMPTS) {
+                attempt.setBlocked(true);
+                attempt.setBlockedUntil(now.plus(BLOCK_MINUTES, ChronoUnit.MINUTES));
+                loginAttemptRepository.save(attempt);
+
+                // Calculer le message de temps
+                java.time.LocalDateTime effectiveBlockedUntil = attempt.getBlockedUntil();
+                java.time.Duration remaining = java.time.Duration.between(now, effectiveBlockedUntil);
+                long minutes = Math.max(0, remaining.toMinutes());
+                long seconds = Math.max(0, remaining.getSeconds() % 60);
+                String timeMsg = minutes > 0 ? minutes + " minute(s)" : (seconds > 0 ? seconds + " seconde(s)" : "quelques instants");
+
+                throw new RuntimeException("❌ COMPTE BLOQUÉ - Vous avez dépassé le nombre de tentatives autorisées (3). Votre compte est bloqué pour " + timeMsg + ". Vous pouvez demander un déblocage à un manager ci-dessous.");
+            } else {
+                loginAttemptRepository.save(attempt);
+                throw new RuntimeException("Nom d'utilisateur ou mot de passe incorrect, veuillez réessayer");
+            }
         }
-        
+
+        // Succès de l'authentification -> réinitialiser les tentatives
+        if (attempt != null) {
+            attempt.setAttempts(0);
+            attempt.setBlocked(false);
+            attempt.setBlockedUntil(null);
+            attempt.setLastAttempt(now);
+            loginAttemptRepository.save(attempt);
+        }
+
         // Générer le token JWT
         String token = jwtService.generateToken(user);
-        
+
         // Préparer la réponse
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Connexion réussie");
@@ -81,7 +159,7 @@ public class AuthService {
         response.put("email", user.getEmail());
         response.put("token", token);
         response.put("role", user.getRole());
-        
+
         return response;
     }
     
