@@ -1632,7 +1632,7 @@ const Manager: React.FC = () => {
       {showPrixModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 rounded-t-2xl">
+            <div className="bg-black text-white px-6 py-4 rounded-t-2xl">
               <h2 className="text-2xl font-bold flex items-center gap-2">
                 <DollarSign className="w-6 h-6" />
                 Configurer Prix par m²
@@ -1684,7 +1684,7 @@ const Manager: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleUpdatePrixParM2}
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all font-semibold"
+                  className="flex-1 px-4 py-3 bg-black text-white rounded-lg hover:shadow-lg transition-all font-semibold"
                 >
                   <Save className="w-5 h-5 inline mr-2" />
                   Enregistrer
