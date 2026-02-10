@@ -38,7 +38,8 @@ public interface PointDeReparationRepository extends JpaRepository<PointDeRepara
             ST_Y(p.geom) as latitude,
             ST_X(p.geom) as longitude,
             e.nom as entrepriseNom,
-            u.nom as utilisateurNom
+            u.nom as utilisateurNom,
+            p.niveau_reparation as niveauReparation
         FROM point_de_reparation p
         LEFT JOIN entreprise e ON p.id_entreprise = e.id_entreprise
         LEFT JOIN utilisateur u ON p.id_utilisateur = u.id_utilisateur
@@ -59,7 +60,8 @@ public interface PointDeReparationRepository extends JpaRepository<PointDeRepara
             ST_Y(p.geom) as latitude,
             ST_X(p.geom) as longitude,
             e.nom as entrepriseNom,
-            u.nom as utilisateurNom
+            u.nom as utilisateurNom,
+            p.niveau_reparation as niveauReparation
         FROM point_de_reparation p
         LEFT JOIN entreprise e ON p.id_entreprise = e.id_entreprise
         LEFT JOIN utilisateur u ON p.id_utilisateur = u.id_utilisateur

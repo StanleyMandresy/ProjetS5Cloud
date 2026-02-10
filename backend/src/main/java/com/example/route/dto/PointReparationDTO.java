@@ -17,6 +17,7 @@ public class PointReparationDTO {
     private Double longitude;
     private String entrepriseNom;
     private String utilisateurNom;
+    private Integer niveauReparation; // Niveau de priorité de 1 à 10
     
     // Constructeur complet
     public PointReparationDTO(Integer id, String titre, String description, 
@@ -37,6 +38,7 @@ public class PointReparationDTO {
         this.longitude = longitude;
         this.entrepriseNom = entrepriseNom;
         this.utilisateurNom = utilisateurNom;
+        this.niveauReparation = null; // Par défaut
     }
     
     // Constructeur vide
@@ -145,5 +147,13 @@ public class PointReparationDTO {
     
     public void setUtilisateurNom(String utilisateurNom) {
         this.utilisateurNom = utilisateurNom;
+    }
+    
+    public Integer getNiveauReparation() {
+        return niveauReparation;
+    }
+    
+    public void setNiveauReparation(Integer niveauReparation) {
+        this.niveauReparation = niveauReparation;
     }
 }

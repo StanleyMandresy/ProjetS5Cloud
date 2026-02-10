@@ -14,6 +14,7 @@ public class UpdatePointReparationRequest {
     private Integer entrepriseId;
     private LocalDate dateDebutTravaux;
     private LocalDate dateFinTravaux;
+    private Integer niveauReparation; // Niveau de priorité de 1 à 10
     
     // Constructeurs
     public UpdatePointReparationRequest() {}
@@ -97,5 +98,13 @@ public class UpdatePointReparationRequest {
     
     public void setDateFinTravaux(LocalDate dateFinTravaux) {
         this.dateFinTravaux = dateFinTravaux;
+    }
+    
+    public Integer getNiveauReparation() {
+        return niveauReparation;
+    }
+    
+    public void setNiveauReparation(Integer niveauReparation) {
+        this.niveauReparation = niveauReparation;
     }
 }
