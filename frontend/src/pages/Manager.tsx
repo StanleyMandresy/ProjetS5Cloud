@@ -254,6 +254,17 @@ const Manager: React.FC = () => {
     const travail = travaux.find(t => t.id === pointId);
     if (!travail) return;
     
+    // Empêcher la régression des statuts
+    if (travail.statut === 'TERMINE') {
+      alert('⚠️ Les travaux terminés ne peuvent plus changer de statut');
+      return;
+    }
+    
+    if (travail.statut === 'EN_COURS' && newStatut === 'NOUVEAU') {
+      alert('⚠️ Les travaux en cours ne peuvent pas revenir au statut NOUVEAU');
+      return;
+    }
+    
     // Ouvrir la modal pour définir le niveau ET éventuellement la date
     setSelectedTravailForNiveau({ id: pointId, statut: newStatut });
     setTempNiveau(travail.niveauReparation || 5);
@@ -981,7 +992,13 @@ const Manager: React.FC = () => {
                     <select
                       value={travail.statut}
                       onChange={(e) => handleQuickStatusChange(travail.id, e.target.value)}
-                      className="px-3 py-2 border-2 border-gray-300 rounded-lg font-semibold text-sm hover:border-itu-accent transition-all cursor-pointer"
+                      disabled={travail.statut === 'TERMINE'}
+                      className={`px-3 py-2 border-2 rounded-lg font-semibold text-sm transition-all ${
+                        travail.statut === 'TERMINE' 
+                          ? 'border-gray-200 bg-gray-100 cursor-not-allowed opacity-60' 
+                          : 'border-gray-300 hover:border-itu-accent cursor-pointer'
+                      }`}
+                      title={travail.statut === 'TERMINE' ? 'Les travaux terminés ne peuvent plus changer de statut' : ''}
                     >
                       {etapes.length > 0 ? (
                         etapes.map(etape => (
@@ -991,9 +1008,15 @@ const Manager: React.FC = () => {
                         ))
                       ) : (
                         <>
-                          <option value="NOUVEAU">NOUVEAU (0%)</option>
-                          <option value="EN_COURS">EN_COURS (50%)</option>
-                          <option value="TERMINE">TERMINE (100%)</option>
+                          <option value="NOUVEAU" disabled={travail.statut === 'EN_COURS' || travail.statut === 'TERMINE'}>
+                            NOUVEAU (0%)
+                          </option>
+                          <option value="EN_COURS" disabled={travail.statut === 'TERMINE'}>
+                            EN_COURS (50%)
+                          </option>
+                          <option value="TERMINE">
+                            TERMINE (100%)
+                          </option>
                         </>
                       )}
                     </select>
@@ -1480,7 +1503,7 @@ const Manager: React.FC = () => {
       {showNiveauModal && selectedTravailForNiveau && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
-            <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-4 rounded-t-2xl">
+            <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-black px-6 py-4 rounded-t-2xl">
               <h2 className="text-2xl font-bold flex items-center gap-2">
                 ⚡ Changement de statut
               </h2>
@@ -1558,7 +1581,7 @@ const Manager: React.FC = () => {
                   type="button"
                   onClick={confirmStatusAndNiveauChange}
                   disabled={pendingStatusChange && !selectedDate}
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-black rounded-lg hover:shadow-lg transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   ✓ Confirmer
                 </button>
