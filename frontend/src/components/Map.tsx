@@ -222,16 +222,27 @@ const Map = () => {
                 <span style="color:#1f2937;font-size:13px;">${s.userEmail}</span>
               </div>
               ` : ''}
-              ${s.photoUrl ? `
-              <div style="margin-top:8px;">
-                <a href="${s.photoUrl}" target="_blank" 
-                   style="display:inline-block;background:#3b82f6;color:white;padding:6px 12px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:500;">
-                  📷 Voir les photos
-                </a>
-              </div>
-              ` : ''}
             </div>
           </div>
+          ${s.photoUrls && s.photoUrls.length > 0 ? `
+          <div style="margin-top:12px;">
+            <div style="font-weight:600;color:#374151;margin-bottom:8px;">📷 Photos (${s.photoUrls.length}):</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;max-height:300px;overflow-y:auto;">
+              ${s.photoUrls.map((photoUrl, index) => `
+                <div style="position:relative;">
+                  <img src="${photoUrl}" 
+                       alt="Photo ${index + 1}" 
+                       style="width:100%;height:120px;object-fit:cover;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);cursor:pointer;" 
+                       onclick="window.open('${photoUrl}', '_blank')" 
+                       onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+                  <div style="display:none;align-items:center;justify-content:center;width:100%;height:120px;padding:8px;background:#fee;color:#c00;border-radius:8px;font-size:11px;text-align:center;">
+                    ⚠️ Erreur
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          ` : ''}
         </div>
       `;
       

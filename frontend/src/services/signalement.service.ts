@@ -10,9 +10,11 @@ export type Signalement = {
   status: "NOUVEAU" | "EN_COURS" | "RESOLU"
   createdAt?: any
   userEmail?: string | null
-  photoUrl?: string
+  photoUrls?: string[] // Tableau de photos en base64
   surfaceM2?: number
   budget?: number
+  linkedTravauxId?: number
+  userId?: string
 }
 
 export const signalementService = {
@@ -38,9 +40,11 @@ export const signalementService = {
           status: data.status,
           createdAt: data.createdAt,
           userEmail: data.userEmail ?? null,
-          photoUrl: data.photoUrl,
+          photoUrls: data.photoUrls ?? [],
           surfaceM2: data.surfaceM2,
-          budget: data.budget
+          budget: data.budget,
+          linkedTravauxId: data.linkedTravauxId,
+          userId: data.userId
         }
       })
     } catch (error) {
