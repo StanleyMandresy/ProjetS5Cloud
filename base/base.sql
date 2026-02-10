@@ -26,6 +26,25 @@ CREATE TABLE utilisateur (
 );
 
 -- =========================
+-- TABLE : login_attempts
+-- =========================
+CREATE TABLE login_attempts (
+    id_attempt SERIAL PRIMARY KEY,
+    id_utilisateur INT REFERENCES utilisateur(id_utilisateur) ON DELETE CASCADE,
+    identifier VARCHAR(200), -- nom d'utilisateur ou email utilisé
+    ip_address VARCHAR(45),
+    attempts INT DEFAULT 0 NOT NULL,
+    last_attempt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    blocked BOOLEAN DEFAULT FALSE,
+    blocked_until TIMESTAMP NULL,
+    blocked_by INT REFERENCES utilisateur(id_utilisateur), -- manager qui a bloqué/débloqué
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_login_attempts_identifier ON login_attempts(identifier);
+CREATE INDEX idx_login_attempts_user ON login_attempts(id_utilisateur);
+
+-- =========================
 -- TABLE : entreprise
 -- =========================
 CREATE TABLE entreprise (

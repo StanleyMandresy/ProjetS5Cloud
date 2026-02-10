@@ -8,6 +8,7 @@ import Register from './pages/Register';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
 import Manager from './pages/Manager';
+import BlockedUsers from './pages/BlockedUsers';
 import { OfflineUserDemo } from './pages/OfflineUserDemo';
 import { TravauxProvider } from "./context/TravauxContext";
 import { SignalementProvider } from './context/SignalementContext';
@@ -45,6 +46,14 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute>
                 <Manager />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/blocked-users"
+            element={
+              <ProtectedRoute>
+                <BlockedUsers />
               </ProtectedRoute>
             }
           />
